@@ -15,16 +15,20 @@ struct NavBarModifier<SelectionType>: ViewModifier where SelectionType: Hashable
     }
 
     @MainActor func body(content: Content) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if !style.placedInToolbar {
-                NavBarWrapperView(selection: $selection)
-                content
-            } else {
-                content.toolbar(content: {
-                    ToolbarItem(placement: .principal) {
-                        NavBarWrapperView(selection: $selection)
-                    }
-                })
+        if style.managedBySelf {
+            content
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                if !style.placedInToolbar {
+                    NavBarWrapperView(selection: $selection)
+                    content
+                } else {
+                    content.toolbar(content: {
+                        ToolbarItem(placement: .principal) {
+                            NavBarWrapperView(selection: $selection)
+                        }
+                    })
+                }
             }
         }
     }
@@ -32,10 +36,14 @@ struct NavBarModifier<SelectionType>: ViewModifier where SelectionType: Hashable
     @Environment(\.pagerStyle) var style: PagerStyle
 }
 
-private struct NavBarWrapperView<SelectionType>: View where SelectionType: Hashable {
+public struct NavBarWrapperView<SelectionType>: View where SelectionType: Hashable {
     @Binding var selection: SelectionType
+    
+    public init(selection: Binding<SelectionType>) {
+        self._selection = selection
+    }
 
-    @MainActor var body: some View {
+    @MainActor public var body: some View {
         switch style {
         case let barStyle as BarStyle:
             IndicatorBarView<SelectionType, AnyView>(selection: $selection, indicator: barStyle.indicatorView)
