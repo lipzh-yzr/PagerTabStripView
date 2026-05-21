@@ -5,6 +5,7 @@
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
 
+import Perception
 import SwiftUI
 
 struct NavBarItem<SelectionType>: View, Identifiable where SelectionType: Hashable {
@@ -22,12 +23,15 @@ struct NavBarItem<SelectionType>: View, Identifiable where SelectionType: Hashab
     }
 
     @MainActor var body: some View {
-        if let dataItem = pagerSettings.items[id] {
-            dataItem.view
-                .onTapGesture {
-                    selection = id
-                }
-                .accessibilityAddTraits(id == selection ? [.isButton, .isSelected] : .isButton)
+        WithPerceptionTracking {
+            if let dataItem = pagerSettings.items[id] {
+                dataItem.view
+                    .onTapGesture {
+                        selection = id
+                    }
+                    .accessibilityAddTraits(id == selection ? [.isButton, .isSelected] : .isButton)
+                    .environment(pagerSettings)
+            }
         }
     }
 }

@@ -4,6 +4,7 @@
 //
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
+import Perception
 import SwiftUI
 
 public struct HorizontalContainerEdge: OptionSet {
@@ -19,10 +20,9 @@ public struct HorizontalContainerEdge: OptionSet {
     public static let both: HorizontalContainerEdge = [.left, .right]
 }
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 15.0, macOS 14.0, *)
 public struct PagerTabStripView<SelectionType, Content>: View where SelectionType: Hashable, Content: View {
     private var content: () -> Content
-    private var navigationBar: (() -> AnyView)?
     private var pagerSettings: PagerSettings<SelectionType>?
     private var swipeGestureEnabled: Binding<Bool>
     private var edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>
@@ -39,22 +39,6 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
         self.selection = selection
         self._internalSelection = State(initialValue: selection.wrappedValue)
         self.pagerSettings = pagerSettings
-        self.navigationBar = nil
-        self.content = content
-    }
-
-    public init<NavigationBar>(swipeGestureEnabled: Binding<Bool> = .constant(true),
-                               edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
-                               selection: Binding<SelectionType>,
-                               pagerSettings: PagerSettings<SelectionType>? = nil,
-                               @ViewBuilder content: @escaping () -> Content,
-                               @ViewBuilder navigationBar: @escaping () -> NavigationBar) where NavigationBar: View {
-        self.swipeGestureEnabled = swipeGestureEnabled
-        self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
-        self.selection = selection
-        self._internalSelection = State(initialValue: selection.wrappedValue)
-        self.pagerSettings = pagerSettings
-        self.navigationBar = { AnyView(navigationBar()) }
         self.content = content
     }
 
@@ -64,7 +48,6 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
                                  edgeSwipeGestureDisabled: edgeSwipeGestureDisabled,
                                  selection: selection,
                                  pagerSettings: pagerSettings,
-                                 navigationBar: navigationBar,
                                  content: content)
     }
 }
@@ -80,21 +63,6 @@ extension PagerTabStripView where SelectionType == Int {
         self.selection = nil
         self._internalSelection = State(initialValue: 0)
         self.pagerSettings = pagerSettings
-        self.navigationBar = nil
-        self.content = content
-    }
-
-    public init<NavigationBar>(swipeGestureEnabled: Binding<Bool> = .constant(true),
-                               edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
-                               pagerSettings: PagerSettings<Int>? = nil,
-                               @ViewBuilder content: @escaping () -> Content,
-                               @ViewBuilder navigationBar: @escaping () -> NavigationBar) where NavigationBar: View {
-        self.swipeGestureEnabled = swipeGestureEnabled
-        self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
-        self.selection = nil
-        self._internalSelection = State(initialValue: 0)
-        self.pagerSettings = pagerSettings
-        self.navigationBar = { AnyView(navigationBar()) }
         self.content = content
     }
 }
@@ -115,87 +83,86 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>,
                 selection: Binding<SelectionType>,
                 pagerSettings: PagerSettings<SelectionType>?,
-                navigationBar: (() -> AnyView)?,
                 @ViewBuilder content: @escaping () -> Content) {
         self._swipeGestureEnabled = swipeGestureEnabled
         self._edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self._selection = selection
         self._pagerSettings = State(initialValue: pagerSettings ?? PagerSettings<SelectionType>())
-        self.navigationBar = navigationBar
         self.content = content()
     }
 
     @MainActor public var body: some View {
-        GeometryReader { geometryProxy in
-            HStack(spacing: 0) {
-                content
-                    .frame(width: geometryProxy.size.width)
-            }
-            .coordinateSpace(name: "PagerViewScrollView")
-            .offset(x: -CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
-            .offset(x: translation)
-            .animation(style.pagerAnimationOnTap, value: selection)
-            .animation(style.pagerAnimationOnSwipe, value: translation)
-            .gesture(swipeGestureEnabled && swipeOn ?
-                        DragGesture(minimumDistance: 25).onChanged { value in
-                            swipeOn = !(edgeSwipeGestureDisabled.contains(.left) &&
-                                            (selection == pagerSettings.itemsOrderedByIndex.first && value.translation.width > 0) ||
-                                            edgeSwipeGestureDisabled.contains(.right) &&
-                                            (selection == pagerSettings.itemsOrderedByIndex.last && value.translation.width < 0))
-                        }.updating($translation) { value, state, _ in
-                            if selection == pagerSettings.itemsOrderedByIndex.first && value.translation.width > 0 {
-                                let normTrans = value.translation.width / (geometryProxy.size.width + 50)
-                                let logValue = log(1 + normTrans)
-                                state = geometryProxy.size.width/1.5 * logValue
-                            } else if selection == pagerSettings.itemsOrderedByIndex.last && value.translation.width < 0 {
-                                let normTrans = -value.translation.width / (geometryProxy.size.width + 50)
-                                let logValue = log(1 + normTrans)
-                                state = -geometryProxy.size.width / 1.5 * logValue
-                            } else {
-                                state = value.translation.width
+        WithPerceptionTracking {
+            GeometryReader { geometryProxy in
+                HStack(spacing: 0) {
+                    content
+                        .frame(width: geometryProxy.size.width)
+                }
+                .coordinateSpace(name: "PagerViewScrollView")
+                .offset(x: -CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
+                .offset(x: translation)
+                .animation(style.pagerAnimationOnTap, value: selection)
+                .animation(style.pagerAnimationOnSwipe, value: translation)
+                .gesture(swipeGestureEnabled && swipeOn ?
+                            DragGesture(minimumDistance: 25).onChanged { value in
+                                swipeOn = !(edgeSwipeGestureDisabled.contains(.left) &&
+                                                (selection == pagerSettings.itemsOrderedByIndex.first && value.translation.width > 0) ||
+                                                edgeSwipeGestureDisabled.contains(.right) &&
+                                                (selection == pagerSettings.itemsOrderedByIndex.last && value.translation.width < 0))
+                            }.updating($translation) { value, state, _ in
+                                if selection == pagerSettings.itemsOrderedByIndex.first && value.translation.width > 0 {
+                                    let normTrans = value.translation.width / (geometryProxy.size.width + 50)
+                                    let logValue = log(1 + normTrans)
+                                    state = geometryProxy.size.width/1.5 * logValue
+                                } else if selection == pagerSettings.itemsOrderedByIndex.last && value.translation.width < 0 {
+                                    let normTrans = -value.translation.width / (geometryProxy.size.width + 50)
+                                    let logValue = log(1 + normTrans)
+                                    state = -geometryProxy.size.width / 1.5 * logValue
+                                } else {
+                                    state = value.translation.width
+                                }
+                            }.onEnded { value in
+                                let offset = value.predictedEndTranslation.width / geometryProxy.size.width
+                                let selectionIndex = pagerSettings.indexOf(tag: selection) ?? 0
+                                let newPredictedIndex = (CGFloat(selectionIndex) - offset).rounded()
+                                let newIndex = min(max(Int(newPredictedIndex), 0), pagerSettings.items.count - 1)
+                                if newIndex > selectionIndex {
+                                    selection =  pagerSettings.nextSelection(for: selection)
+                                } else if newIndex < selectionIndex {
+                                    selection = pagerSettings.previousSelection(for: selection)
+                                }
                             }
-                        }.onEnded { value in
-                            let offset = value.predictedEndTranslation.width / geometryProxy.size.width
-                            let selectionIndex = pagerSettings.indexOf(tag: selection) ?? 0
-                            let newPredictedIndex = (CGFloat(selectionIndex) - offset).rounded()
-                            let newIndex = min(max(Int(newPredictedIndex), 0), pagerSettings.items.count - 1)
-                            if newIndex > selectionIndex {
-                                selection =  pagerSettings.nextSelection(for: selection)
-                            } else if newIndex < selectionIndex {
-                                selection = pagerSettings.previousSelection(for: selection)
-                            }
-                        }
-                        : nil)
-            .onAppear {
-                let frame = geometryProxy.frame(in: .local)
-                pagerSettings.width = frame.width
-                if let index = pagerSettings.indexOf(tag: selection) {
-                    pagerSettings.contentOffset = -CGFloat(index) * frame.width
+                            : nil)
+                .onAppear {
+                    let frame = geometryProxy.frame(in: .local)
+                    pagerSettings.width = frame.width
+                    if let index = pagerSettings.indexOf(tag: selection) {
+                        pagerSettings.contentOffset = -CGFloat(index) * frame.width
+                    }
+                }
+                .onChange(of: pagerSettings.itemsOrderedByIndex) { _ in
+                    pagerSettings.contentOffset = -(CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
+                }
+                .onChange(of: geometryProxy.frame(in: .local)) { geometry in
+                    pagerSettings.width = geometry.width
+                    if let index = pagerSettings.indexOf(tag: selection) {
+                        pagerSettings.contentOffset = -(CGFloat(index)) * geometry.width
+                    }
+                }
+                .onChange(of: selection) { newSelection in
+                    pagerSettings.contentOffset = -(CGFloat(pagerSettings.indexOf(tag: newSelection) ?? 0) * geometryProxy.size.width)
+                    swipeOn = true
+                }
+                .onChange(of: translation) { newTranslation in
+                    pagerSettings.contentOffset = newTranslation - (CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
+                    swipeOn = true
                 }
             }
-            .onChange(of: pagerSettings.itemsOrderedByIndex) {
-                pagerSettings.contentOffset = -(CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
-            }
-            .onChange(of: geometryProxy.frame(in: .local)) { _, geometry in
-                pagerSettings.width = geometry.width
-                if let index = pagerSettings.indexOf(tag: selection) {
-                    pagerSettings.contentOffset = -(CGFloat(index)) * geometry.width
-                }
-            }
-            .onChange(of: selection) { _, newSelection in
-                pagerSettings.contentOffset = -(CGFloat(pagerSettings.indexOf(tag: newSelection) ?? 0) * geometryProxy.size.width)
-                swipeOn = true
-            }
-            .onChange(of: translation) {
-                pagerSettings.contentOffset = translation - (CGFloat(pagerSettings.indexOf(tag: selection) ?? 0) * geometryProxy.size.width)
-                swipeOn = true
-            }
+            .modifier(NavBarModifier(selection: $selection,
+                                     pagerSettings: pagerSettings))
+            .environment(pagerSettings)
+            .clipped()
         }
-        .modifier(NavBarModifier(selection: $selection,
-                                 pagerSettings: pagerSettings,
-                                 navigationBar: navigationBar))
-        .environment(pagerSettings)
-        .clipped()
     }
 
 }

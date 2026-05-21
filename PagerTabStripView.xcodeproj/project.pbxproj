@@ -10,6 +10,7 @@
 		280497842983F8ED0086C75D /* PagerTabStripViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 280497832983F8ED0086C75D /* PagerTabStripViewTests.swift */; };
 		280497852983F8ED0086C75D /* PagerTabStripView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28F8287D1C494B2C00330CF4 /* PagerTabStripView.framework */; };
 		2804978D29840CE80086C75D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2804978C29840CE80086C75D /* Foundation.framework */; };
+		28B3D65A2C00000100F6C1A1 /* Perception in Frameworks */ = {isa = PBXBuildFile; productRef = 28B3D6592C00000100F6C1A1 /* Perception */; };
 		28070C6026B1AF52002346E1 /* PagerStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28070C5F26B1AF52002346E1 /* PagerStyle.swift */; };
 		285A6894291EE43E009810C8 /* Collection+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A6893291EE43E009810C8 /* Collection+Extensions.swift */; };
 		AB80DE8426BC93720022F57D /* PagerTabStripView.h in Headers */ = {isa = PBXBuildFile; fileRef = AB80DE8226BC93720022F57D /* PagerTabStripView.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -69,6 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				28B3D65A2C00000100F6C1A1 /* Perception in Frameworks */,
 				2804978D29840CE80086C75D /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -227,6 +229,9 @@
 			dependencies = (
 			);
 			name = PagerTabStripView;
+			packageProductDependencies = (
+				28B3D6592C00000100F6C1A1 /* Perception */,
+			);
 			productName = PagerTabStrip;
 			productReference = 28F8287D1C494B2C00330CF4 /* PagerTabStripView.framework */;
 			productType = "com.apple.product-type.framework";
@@ -258,6 +263,9 @@
 				Base,
 			);
 			mainGroup = 28F828731C494B2C00330CF4;
+			packageReferences = (
+				28B3D6582C00000100F6C1A1 /* XCRemoteSwiftPackageReference "swift-perception" */,
+			);
 			productRefGroup = 28F8287E1C494B2C00330CF4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -360,7 +368,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -390,7 +398,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xmartlabs.PagerTabStripViewTests;
@@ -453,7 +461,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -508,7 +516,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -534,7 +542,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "$(SRCROOT)/PagerTabStripView/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -566,7 +574,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INFOPLIST_FILE = "$(SRCROOT)/PagerTabStripView/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -616,6 +624,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		28B3D6582C00000100F6C1A1 /* XCRemoteSwiftPackageReference "swift-perception" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-perception";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		28B3D6592C00000100F6C1A1 /* Perception */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 28B3D6582C00000100F6C1A1 /* XCRemoteSwiftPackageReference "swift-perception" */;
+			productName = Perception;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 28F828741C494B2C00330CF4 /* Project object */;
 }

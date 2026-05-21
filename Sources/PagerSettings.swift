@@ -5,7 +5,7 @@
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
 
-import Observation
+import Perception
 import SwiftUI
 
 struct DataItem<SelectedType>: Identifiable, Equatable where SelectedType: Hashable {
@@ -105,7 +105,7 @@ public enum TransitionProgress<SelectionType: Hashable>: Equatable {
 }
 
 @MainActor
-@Observable
+@Perceptible
 public final class PagerSettings<SelectionType> where SelectionType: Hashable {
 
     var width: CGFloat = 0 {

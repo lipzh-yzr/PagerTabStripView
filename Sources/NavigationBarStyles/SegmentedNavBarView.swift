@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Perception
 import SwiftUI
 
 internal struct SegmentedNavBarView<SelectionType>: View where SelectionType: Hashable {
@@ -18,18 +19,20 @@ internal struct SegmentedNavBarView<SelectionType>: View where SelectionType: Ha
     }
 
     @MainActor var body: some View {
-        if let internalStyle = style as? SegmentedControlStyle {
-            Picker("SegmentedNavBarView", selection: $selection) {
-                if pagerSettings.items.count > 0 && pagerSettings.width > 0 {
-                    ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
-                        NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
-                            .tag(tag)
+        WithPerceptionTracking {
+            if let internalStyle = style as? SegmentedControlStyle {
+                Picker("SegmentedNavBarView", selection: $selection) {
+                    if pagerSettings.items.count > 0 && pagerSettings.width > 0 {
+                        ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
+                            NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
+                                .tag(tag)
+                        }
                     }
                 }
+                .pickerStyle(.segmented)
+                .colorMultiply(internalStyle.backgroundColor)
+                .padding(internalStyle.padding)
             }
-            .pickerStyle(.segmented)
-            .colorMultiply(internalStyle.backgroundColor)
-            .padding(internalStyle.padding)
         }
     }
 

@@ -5,39 +5,22 @@
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
 
+import Perception
 import SwiftUI
 
 struct NavBarModifier<SelectionType>: ViewModifier where SelectionType: Hashable {
     @Binding private var selection: SelectionType
     private var pagerSettings: PagerSettings<SelectionType>
-    private var navigationBar: (() -> AnyView)?
 
     public init(selection: Binding<SelectionType>,
-                pagerSettings: PagerSettings<SelectionType>,
-                navigationBar: (() -> AnyView)?) {
+                pagerSettings: PagerSettings<SelectionType>) {
         self._selection = selection
         self.pagerSettings = pagerSettings
-        self.navigationBar = navigationBar
     }
 
     @ViewBuilder
     @MainActor func body(content: Content) -> some View {
-        if let navigationBar {
-            if style.placedInToolbar {
-                content.toolbar(content: {
-                    ToolbarItem(placement: .principal) {
-                        navigationBar()
-                            .environment(pagerSettings)
-                    }
-                })
-            } else {
-                VStack(alignment: .leading, spacing: 0) {
-                    navigationBar()
-                        .environment(pagerSettings)
-                    content
-                }
-            }
-        } else if style.managedBySelf {
+        if style.managedBySelf {
             content
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -74,9 +57,11 @@ public struct NavBarWrapperView<SelectionType>: View where SelectionType: Hashab
 
     @ViewBuilder
     @MainActor public var body: some View {
-        if let pagerSettings = pagerSettings ?? environmentPagerSettings {
-            navBar(pagerSettings: pagerSettings)
-                .environment(pagerSettings)
+        WithPerceptionTracking {
+            if let pagerSettings = pagerSettings ?? environmentPagerSettings {
+                navBar(pagerSettings: pagerSettings)
+                    .environment(pagerSettings)
+            }
         }
     }
 

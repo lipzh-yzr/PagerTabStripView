@@ -5,6 +5,7 @@
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
 
+import Perception
 import SwiftUI
 
 struct PagerTabItemModifier<SelectionType, NavTabView>: ViewModifier where SelectionType: Hashable, NavTabView: View {
@@ -27,10 +28,10 @@ struct PagerTabItemModifier<SelectionType, NavTabView>: ViewModifier where Selec
                 }.onDisappear {
                     pagerSettings.remove(tag: tag)
                 }
-                .onChange(of: geometryProxy.frame(in: .named("PagerViewScrollView"))) { _, newFrame in
+                .onChange(of: geometryProxy.frame(in: .named("PagerViewScrollView"))) { newFrame in
                     index = Int(round(newFrame.minX / newFrame.width))
                 }
-                .onChange(of: index) { _, newIndex in
+                .onChange(of: index) { newIndex in
                     pagerSettings.createOrUpdate(tag: tag, index: newIndex, view: navTabView())
                 }
         }
