@@ -63,7 +63,7 @@ private let selectedColor = Color(red: 234/255.0, green: 234/255.0, blue: 234/25
 
 private struct YoutubeNavBarItem<SelectionType>: View where SelectionType: Hashable {
 
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings: PagerSettings<SelectionType>
 
     let unselectedColor = Color(red: 73/255.0, green: 8/255.0, blue: 10/255.0, opacity: 1.0)
 

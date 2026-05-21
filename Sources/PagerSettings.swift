@@ -5,6 +5,7 @@
 //  Copyright © 2022 Xmartlabs SRL. All rights reserved.
 //
 
+import Observation
 import SwiftUI
 
 struct DataItem<SelectedType>: Identifiable, Equatable where SelectedType: Hashable {
@@ -36,7 +37,7 @@ public enum TransitionProgress<SelectionType: Hashable>: Equatable {
         self = .transition(from: from, to: to, percentage: percentage)
     }
 
-    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable:next cyclomatic_complexity
     public static func == (lhs: TransitionProgress<SelectionType>, rhs: TransitionProgress<SelectionType>) -> Bool {
         switch (lhs, rhs) {
         case (.none, .transition),
@@ -103,28 +104,32 @@ public enum TransitionProgress<SelectionType: Hashable>: Equatable {
     }
 }
 
-public class PagerSettings<SelectionType>: ObservableObject where SelectionType: Hashable {
+@MainActor
+@Observable
+public final class PagerSettings<SelectionType> where SelectionType: Hashable {
 
-    @Published var width: CGFloat = 0 {
+    var width: CGFloat = 0 {
         didSet {
             recalculateTransition()
         }
     }
 
-    @Published var contentOffset: CGFloat = 0 {
+    var contentOffset: CGFloat = 0 {
         didSet {
             recalculateTransition()
         }
     }
 
-    @Published private(set) public var transition = TransitionProgress<SelectionType>.none
+    public private(set) var transition = TransitionProgress<SelectionType>.none
 
-    @Published private(set) var items = [SelectionType: DataItem<SelectionType>]() {
+    private(set) var items = [SelectionType: DataItem<SelectionType>]() {
         didSet {
             itemsOrderedByIndex = items.values.sorted { $0.index < $1.index }.map { $0.tag }
         }
     }
-    @Published private(set) var itemsOrderedByIndex = [SelectionType]()
+    private(set) var itemsOrderedByIndex = [SelectionType]()
+
+    public init() {}
 
     private func recalculateTransition() {
         let indexAndPercentage = width == 0 ? 0 : -contentOffset / width

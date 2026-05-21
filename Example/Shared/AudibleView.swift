@@ -53,7 +53,7 @@ struct AudibleView: View {
 
 private struct TabBarView<SelectionType: Hashable>: View {
 
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings: PagerSettings<SelectionType>
     @Environment(\.colorScheme) var colorScheme
     @Binding var selection: SelectionType
     let tag: SelectionType

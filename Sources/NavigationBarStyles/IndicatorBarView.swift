@@ -15,9 +15,13 @@ internal struct IndicatorBarView<SelectionType, Indicator>: View where Selection
     @State private var indicatorWidth = CGFloat.zero
     @State private var x = CGFloat.zero
     @State private var appeared = false
+    private var pagerSettings: PagerSettings<SelectionType>
 
-    public init(selection: Binding<SelectionType>, indicator: @escaping () -> Indicator) {
+    public init(selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>,
+                indicator: @escaping () -> Indicator) {
         self._selection = selection
+        self.pagerSettings = pagerSettings
         self.indicator = indicator
     }
 
@@ -28,7 +32,7 @@ internal struct IndicatorBarView<SelectionType, Indicator>: View where Selection
                     .frame(width: indicatorWidth, height: internalStyle.indicatorViewHeight)
                     .position(x: x, y: internalStyle.indicatorViewHeight / 2)
                     .animation(appeared ? .default : .none, value: x)
-                    .onChange(of: pagerSettings.width) { width in
+                    .onChange(of: pagerSettings.width) { _, width in
                         guard pagerSettings.items.count > 0, width > 0 else {
                             indicatorWidth = 0
                             x = 0
@@ -38,7 +42,7 @@ internal struct IndicatorBarView<SelectionType, Indicator>: View where Selection
                         indicatorWidth =  totalItemWidth / CGFloat(pagerSettings.items.count)
                         x = (-pagerSettings.contentOffset / CGFloat(pagerSettings.items.count)) + (indicatorWidth / 2)
                     }
-                    .onChange(of: pagerSettings.contentOffset) { _ in
+                    .onChange(of: pagerSettings.contentOffset) {
                         guard pagerSettings.items.count > 0, pagerSettings.width > 0 else {
                             indicatorWidth = 0
                             x = 0
@@ -48,7 +52,7 @@ internal struct IndicatorBarView<SelectionType, Indicator>: View where Selection
                         indicatorWidth = totalItemWidth / CGFloat(pagerSettings.items.count)
                         x = (-pagerSettings.contentOffset / CGFloat(pagerSettings.items.count)) + (indicatorWidth / 2)
                     }
-                    .onChange(of: pagerSettings.itemsOrderedByIndex) { items in
+                    .onChange(of: pagerSettings.itemsOrderedByIndex) { _, items in
                         guard items.count > 0, pagerSettings.width > 0 else {
                             indicatorWidth = 0
                             x = 0
@@ -69,5 +73,4 @@ internal struct IndicatorBarView<SelectionType, Indicator>: View where Selection
     }
 
     @Environment(\.pagerStyle) private var style: PagerStyle
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
 }

@@ -11,12 +11,13 @@ import SwiftUI
 internal struct ScrollableNavBarView<SelectionType>: View where SelectionType: Hashable {
 
     @Binding var selection: SelectionType
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    private var pagerSettings: PagerSettings<SelectionType>
     @Environment(\.pagerStyle) private var style: PagerStyle
     @State private var appeared = false
 
-    public init(selection: Binding<SelectionType>) {
+    public init(selection: Binding<SelectionType>, pagerSettings: PagerSettings<SelectionType>) {
         self._selection = selection
+        self.pagerSettings = pagerSettings
     }
 
     @MainActor var body: some View {
@@ -25,7 +26,7 @@ internal struct ScrollableNavBarView<SelectionType>: View where SelectionType: H
                 ScrollView(.horizontal, showsIndicators: false) {
                     ScrollableNavBarViewLayout(spacing: internalStyle.tabItemSpacing) {
                         ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
-                            NavBarItem(id: tag, selection: $selection)
+                            NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
                                 .tag(tag)
                         }
                         internalStyle.indicatorView()
@@ -38,12 +39,12 @@ internal struct ScrollableNavBarView<SelectionType>: View where SelectionType: H
                 }
                 .background(internalStyle.barBackgroundView())
                 .padding(internalStyle.padding)
-                .onChange(of: pagerSettings.itemsOrderedByIndex) { _ in
+                .onChange(of: pagerSettings.itemsOrderedByIndex) {
                     if pagerSettings.items[selection] != nil {
                         proxy.scrollTo(selection, anchor: .center)
                     }
                 }
-                .onChange(of: selection) { newSelection in
+                .onChange(of: selection) { _, newSelection in
                     withAnimation {
                         if pagerSettings.items[newSelection] != nil {
                             proxy.scrollTo(newSelection, anchor: .center)

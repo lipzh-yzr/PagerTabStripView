@@ -11,11 +11,14 @@ struct NavBarItem<SelectionType>: View, Identifiable where SelectionType: Hashab
 
     var id: SelectionType
     @Binding private var selection: SelectionType
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    private var pagerSettings: PagerSettings<SelectionType>
 
-    public init(id: SelectionType, selection: Binding<SelectionType>) {
+    public init(id: SelectionType,
+                selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>) {
         self.id = id
         self._selection = selection
+        self.pagerSettings = pagerSettings
     }
 
     @MainActor var body: some View {

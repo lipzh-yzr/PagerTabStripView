@@ -10,10 +10,11 @@ import SwiftUI
 
 internal struct SegmentedNavBarView<SelectionType>: View where SelectionType: Hashable {
     @Binding private var selection: SelectionType
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    private var pagerSettings: PagerSettings<SelectionType>
 
-    public init(selection: Binding<SelectionType>) {
+    public init(selection: Binding<SelectionType>, pagerSettings: PagerSettings<SelectionType>) {
         self._selection = selection
+        self.pagerSettings = pagerSettings
     }
 
     @MainActor var body: some View {
@@ -21,7 +22,7 @@ internal struct SegmentedNavBarView<SelectionType>: View where SelectionType: Ha
             Picker("SegmentedNavBarView", selection: $selection) {
                 if pagerSettings.items.count > 0 && pagerSettings.width > 0 {
                     ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
-                        NavBarItem(id: tag, selection: $selection)
+                        NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
                             .tag(tag)
                     }
                 }
