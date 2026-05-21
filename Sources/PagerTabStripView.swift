@@ -23,6 +23,7 @@ public struct HorizontalContainerEdge: OptionSet {
 public struct PagerTabStripView<SelectionType, Content>: View where SelectionType: Hashable, Content: View {
     private var content: () -> Content
     private var navigationBar: (() -> AnyView)?
+    private var pagerSettings: PagerSettings<SelectionType>?
     private var swipeGestureEnabled: Binding<Bool>
     private var edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>
     private var selection: Binding<SelectionType>?
@@ -30,11 +31,14 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
 
     public init(swipeGestureEnabled: Binding<Bool> = .constant(true),
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
-                selection: Binding<SelectionType>, @ViewBuilder content: @escaping () -> Content) {
+                selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>? = nil,
+                @ViewBuilder content: @escaping () -> Content) {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self.selection = selection
         self._internalSelection = State(initialValue: selection.wrappedValue)
+        self.pagerSettings = pagerSettings
         self.navigationBar = nil
         self.content = content
     }
@@ -42,12 +46,14 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
     public init<NavigationBar>(swipeGestureEnabled: Binding<Bool> = .constant(true),
                                edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
                                selection: Binding<SelectionType>,
+                               pagerSettings: PagerSettings<SelectionType>? = nil,
                                @ViewBuilder content: @escaping () -> Content,
                                @ViewBuilder navigationBar: @escaping () -> NavigationBar) where NavigationBar: View {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self.selection = selection
         self._internalSelection = State(initialValue: selection.wrappedValue)
+        self.pagerSettings = pagerSettings
         self.navigationBar = { AnyView(navigationBar()) }
         self.content = content
     }
@@ -57,6 +63,7 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
         WrapperPagerTabStripView(swipeGestureEnabled: swipeGestureEnabled,
                                  edgeSwipeGestureDisabled: edgeSwipeGestureDisabled,
                                  selection: selection,
+                                 pagerSettings: pagerSettings,
                                  navigationBar: navigationBar,
                                  content: content)
     }
@@ -66,23 +73,27 @@ extension PagerTabStripView where SelectionType == Int {
 
     public init(swipeGestureEnabled: Binding<Bool> = .constant(true),
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
+                pagerSettings: PagerSettings<Int>? = nil,
                 @ViewBuilder content: @escaping () -> Content) {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self.selection = nil
         self._internalSelection = State(initialValue: 0)
+        self.pagerSettings = pagerSettings
         self.navigationBar = nil
         self.content = content
     }
 
     public init<NavigationBar>(swipeGestureEnabled: Binding<Bool> = .constant(true),
                                edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
+                               pagerSettings: PagerSettings<Int>? = nil,
                                @ViewBuilder content: @escaping () -> Content,
                                @ViewBuilder navigationBar: @escaping () -> NavigationBar) where NavigationBar: View {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self.selection = nil
         self._internalSelection = State(initialValue: 0)
+        self.pagerSettings = pagerSettings
         self.navigationBar = { AnyView(navigationBar()) }
         self.content = content
     }
@@ -92,7 +103,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
 
     private var content: Content
     private var navigationBar: (() -> AnyView)?
-    @State private var pagerSettings = PagerSettings<SelectionType>()
+    @State private var pagerSettings: PagerSettings<SelectionType>
     @Environment(\.pagerStyle) var style: PagerStyle
     @Binding private var selection: SelectionType
     @GestureState private var translation: CGFloat = 0
@@ -103,11 +114,13 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
     public init(swipeGestureEnabled: Binding<Bool>,
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>,
                 selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>?,
                 navigationBar: (() -> AnyView)?,
                 @ViewBuilder content: @escaping () -> Content) {
         self._swipeGestureEnabled = swipeGestureEnabled
         self._edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self._selection = selection
+        self._pagerSettings = State(initialValue: pagerSettings ?? PagerSettings<SelectionType>())
         self.navigationBar = navigationBar
         self.content = content()
     }
@@ -182,47 +195,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                                  pagerSettings: pagerSettings,
                                  navigationBar: navigationBar))
         .environment(pagerSettings)
-        .preference(key: PagerSettingsPreferenceKey<SelectionType>.self,
-                    value: PagerSettingsPreferenceValue(settings: pagerSettings))
         .clipped()
     }
 
-}
-
-private struct PagerSettingsPreferenceValue<SelectionType>: Equatable where SelectionType: Hashable {
-    let settings: PagerSettings<SelectionType>?
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        switch (lhs.settings, rhs.settings) {
-        case (.none, .none):
-            return true
-        case let (.some(lhsSettings), .some(rhsSettings)):
-            return lhsSettings === rhsSettings
-        default:
-            return false
-        }
-    }
-}
-
-private struct PagerSettingsPreferenceKey<SelectionType>: PreferenceKey where SelectionType: Hashable {
-    static var defaultValue: PagerSettingsPreferenceValue<SelectionType> {
-        PagerSettingsPreferenceValue(settings: nil)
-    }
-
-    static func reduce(value: inout PagerSettingsPreferenceValue<SelectionType>,
-                       nextValue: () -> PagerSettingsPreferenceValue<SelectionType>) {
-        value = nextValue()
-    }
-}
-
-extension View {
-
-    public func onPagerSettingsChange<SelectionType>(
-        for selectionType: SelectionType.Type,
-        perform action: @escaping (PagerSettings<SelectionType>?) -> Void
-    ) -> some View where SelectionType: Hashable {
-        onPreferenceChange(PagerSettingsPreferenceKey<SelectionType>.self) { value in
-            action(value.settings)
-        }
-    }
 }
