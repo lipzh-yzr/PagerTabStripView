@@ -95,7 +95,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                 .offset(x: translation)
                 .animation(style.pagerAnimationOnTap, value: selection)
                 .animation(style.pagerAnimationOnSwipe, value: translation)
-                .gesture(swipeGestureEnabled && swipeOn ?
+                .simultaneousGesture(
                             DragGesture(minimumDistance: 25).onChanged { value in
                                 swipeOn = !(edgeSwipeGestureDisabled.contains(.left) &&
                                                 (selection == pagerSettings.itemsOrderedByIndex.first && value.translation.width > 0) ||
@@ -123,8 +123,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                                 } else if newIndex < selectionIndex {
                                     selection = pagerSettings.previousSelection(for: selection)
                                 }
-                            }
-                            : nil)
+                            }, isEnabled: swipeGestureEnabled && swipeOn)
                 .onAppear {
                     let frame = geometryProxy.frame(in: .local)
                     pagerSettings.width = frame.width
