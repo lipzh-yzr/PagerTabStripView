@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct BarStyleView: View {
     @State var selection = 1
@@ -16,23 +17,28 @@ struct BarStyleView: View {
     @StateObject var likesModel = TweetsModel()
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
-                .pagerTabItem(tag: 0) {
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
+                        .pagerTabItem(tag: 0) {
+                        }
+                    
+                    PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
+                        .pagerTabItem(tag: 1) {
+                        }
+                    
+                    PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
+                        .pagerTabItem(tag: 2) {
+                        }
                 }
-
-            PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
-                .pagerTabItem(tag: 1) {
-                }
-
-            PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
-                .pagerTabItem(tag: 2) {
-                }
+            }
+            .pagerTabStripViewStyle(.bar(placedInToolbar: false, indicatorViewHeight: 6) {
+                Rectangle().fill(.yellow)
+            })
+            .pagerContext(Int.self)
+            .navigationTitle("Bar Style View")
         }
-        .pagerTabStripViewStyle(.bar(placedInToolbar: false, indicatorViewHeight: 6) {
-            Rectangle().fill(.yellow)
-        })
-        .navigationTitle("Bar Style View")
     }
 }
 

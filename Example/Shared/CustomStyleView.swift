@@ -52,6 +52,7 @@ struct CustomStyleView: View {
                                            }, indicatorView: {
                                             Text([.orange, .green, .purple].contains(selection) ? "👍🏻" : "👎").offset(x: 0, y: -24)
                                            }))
+        .pagerContext(Color.self)
         .navigationTitle("🌈 Rainbow")
     }
 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct InstagramView: View {
 
@@ -24,39 +25,59 @@ struct InstagramView: View {
     @StateObject var listModel = ListModel()
     @StateObject var likedModel = ListModel()
     @StateObject var savedModel = ListModel()
+    @State var edgeSwipe: HorizontalContainerEdge = .both
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            PostsList(isLoading: $galleryModel.isLoading, items: galleryModel.posts)
-                .pagerTabItem(tag: Page.gallery) {
-                    InstagramNavBarItem(imageName: "photo.stack", selection: $selection, tag: Page.gallery)
-                }
-            PostsList(isLoading: $listModel.isLoading, items: listModel.posts, withDescription: false)
-                .pagerTabItem(tag: Page.list) {
-                    InstagramNavBarItem(imageName: "chart.bar.doc.horizontal" /* "list.bullet" */, selection: $selection, tag: Page.list)
-                }
-            if toggle {
-                PostsList(isLoading: $likedModel.isLoading, items: likedModel.posts)
-                    .pagerTabItem(tag: Page.like) {
-                        InstagramNavBarItem(imageName: "heart", selection: $selection, tag: Page.like)
+        WithPerceptionTracking {
+            PagerTabStripView(
+                edgeSwipeGestureDisabled: $edgeSwipe,
+                selection: $selection
+            ) {
+                WithPerceptionTracking {
+                    PostsList(isLoading: $galleryModel.isLoading, items: galleryModel.posts)
+                        .pagerTabItem(tag: Page.gallery) {
+                            InstagramNavBarItem(
+                                imageName: "photo.stack",
+                                selection: $selection,
+                                tag: Page.gallery
+                            )
+                        }
+                    PostsList(isLoading: $listModel.isLoading, items: listModel.posts, withDescription: false)
+                        .pagerTabItem(tag: Page.list) {
+                            InstagramNavBarItem(imageName: "chart.bar.doc.horizontal" /* "list.bullet" */, selection: $selection, tag: Page.list)
+                        }
+                    if toggle {
+                        PostsList(isLoading: $likedModel.isLoading, items: likedModel.posts)
+                            .pagerTabItem(tag: Page.like) {
+                                InstagramNavBarItem(imageName: "heart", selection: $selection, tag: Page.like)
+                            }
+                        PostsList(isLoading: $savedModel.isLoading, items: savedModel.posts, withDescription: false)
+                            .pagerTabItem(tag: Page.saved) {
+                                InstagramNavBarItem(imageName: "photo.stack" /* "bookmark"*/, selection: $selection, tag: Page.saved)
+                            }
                     }
-                PostsList(isLoading: $savedModel.isLoading, items: savedModel.posts, withDescription: false)
-                    .pagerTabItem(tag: Page.saved) {
-                        InstagramNavBarItem(imageName: "photo.stack" /* "bookmark"*/, selection: $selection, tag: Page.saved)
-                    }
+                }
             }
+            .toolbar(content: {
+                ToolbarItem(placement: .principal) {
+                    NavBarWrapperView(selection: $selection)
+                }
+            })
+            .pagerTabStripViewStyle(.scrollableBarButton(placedInToolbar: false,
+                                                         managedBySelf: true,
+                                                         tabItemSpacing: 50,
+                                                         tabItemHeight: 50, indicatorViewHeight: 2,
+                                                         indicatorView: { Rectangle().fill(Color(.systemBlue)).cornerRadius(1) }))
+            .pagerContext(Page.self)
+            .navigationBarItems(trailing: Button("Refresh") {
+                toggle.toggle()
+            })
         }
-        .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
-                                           tabItemHeight: 50, indicatorViewHeight: 2,
-                                           indicatorView: { Rectangle().fill(Color(.systemBlue)).cornerRadius(1) }))
-        .navigationBarItems(trailing: Button("Refresh") {
-            toggle.toggle()
-        })
     }
 }
 
 struct InstagramNavBarItem<SelectionType>: View where SelectionType: Hashable {
-    @EnvironmentObject private var pagerSettings: PagerSettings<SelectionType>
+    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings
 
     var image: Image
     @Binding var selection: SelectionType
@@ -69,15 +90,16 @@ struct InstagramNavBarItem<SelectionType>: View where SelectionType: Hashable {
     }
 
     @MainActor var body: some View {
-        VStack {
-            image
-                .renderingMode(.template)
-                .resizable()
-                .frame(width: 25.0, height: 25)
-                .foregroundColor(Color(.systemGray).interpolateTo(color: Color(.systemBlue), fraction: pagerSettings.transition.progress(for: tag)))
+        WithPerceptionTracking {
+            VStack {
+                image
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 25.0, height: 25)
+                    .foregroundColor(Color(.systemGray).interpolateTo(color: Color(.systemBlue), fraction: pagerSettings.transition.progress(for: tag)))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .animation(.easeInOut, value: selection)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

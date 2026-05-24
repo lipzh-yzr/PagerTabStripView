@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 private struct PageItem: Identifiable {
     var id: Int { tag }
@@ -30,32 +31,43 @@ struct TwitterView: View {
     ]
 
     @MainActor var body: some View {
-        PagerTabStripView(swipeGestureEnabled: $swipeGestureEnabled, selection: $selection) {
-            ForEach(toggle ? items : items.reversed().dropLast(5), id: \.title) { item in
-                PostsList(items: item.posts, withDescription: item.withDescription)
-                    .pagerTabItem(tag: item.tag) {
-                        TabBarView(tag: item.tag, title: item.title, selection: $selection)
+        WithPerceptionTracking {
+            PagerTabStripView(
+                swipeGestureEnabled: $swipeGestureEnabled,
+                selection: $selection
+            ) {
+                ForEach(toggle ? items : items.reversed().dropLast(5), id: \.title) { item in
+                    WithPerceptionTracking {
+                        PostsList(items: item.posts, withDescription: item.withDescription)
+                            .pagerTabItem(tag: item.tag) {
+                                TabBarView(
+                                    tag: item.tag,
+                                    title: item.title,
+                                    selection: $selection)
+                            }
                     }
+                }
             }
+            .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15, tabItemHeight: 50, indicatorViewHeight: 3, indicatorView: {
+                Rectangle().fill(.blue).cornerRadius(5)
+            }))
+            .pagerContext(Int.self)
+            .navigationBarItems(trailing: HStack {
+                Button("Refresh") {
+                    toggle.toggle()
+                }
+                Button(swipeGestureEnabled ? "Swipe On": "Swipe Off") {
+                    swipeGestureEnabled.toggle()
+                }
+            }
+            )
         }
-        .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15, tabItemHeight: 50, indicatorViewHeight: 3, indicatorView: {
-            Rectangle().fill(.blue).cornerRadius(5)
-        }))
-        .navigationBarItems(trailing: HStack {
-            Button("Refresh") {
-                toggle.toggle()
-            }
-            Button(swipeGestureEnabled ? "Swipe On": "Swipe Off") {
-                swipeGestureEnabled.toggle()
-            }
-        }
-        )
     }
 }
 
 private struct TabBarView<SelectionType: Hashable>: View {
 
-    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings: PagerSettings<SelectionType>
+    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings
     @Environment(\.colorScheme) var colorScheme
     @Binding var selection: SelectionType
     let tag: SelectionType
@@ -68,17 +80,19 @@ private struct TabBarView<SelectionType: Hashable>: View {
     }
 
     @MainActor var body: some View {
-        VStack {
-            let selectedColor: Color = colorScheme == .dark ? .white : .black
-            Text(title)
-                .foregroundColor(.gray.interpolateTo(color: selection == tag ? selectedColor : Color(.systemGray),
-                                                     fraction: pagerSettings.transition.progress(for: tag)))
-                .font(.subheadline.bold())
-                .frame(maxHeight: .infinity)
-                .animation(.default, value: selection)
-                .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+        WithPerceptionTracking {
+            VStack {
+                let selectedColor: Color = colorScheme == .dark ? .white : .black
+                Text(title)
+                    .foregroundColor(.gray.interpolateTo(color: selection == tag ? selectedColor : Color(.systemGray),
+                                                         fraction: pagerSettings.transition.progress(for: tag) ?? 0))
+                    .font(.subheadline.bold())
+                    .frame(maxHeight: .infinity)
+                    .animation(.default, value: selection)
+                    .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+            }
+            .frame(height: 40)
         }
-        .frame(height: 40)
     }
 }
 
