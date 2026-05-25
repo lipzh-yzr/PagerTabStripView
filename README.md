@@ -48,20 +48,21 @@ struct MyPagerView: View {
 
         PagerTabStripView() {
             MyFirstView()
-                .pagerTabItem(tag: 1) {
+                .pagerTabItem(tag: 0) {
                     TitleNavBarItem(title: "Tab 1")
                 }
             MySecondView()
-                .pagerTabItem(tag: 2) {
+                .pagerTabItem(tag: 1) {
                     TitleNavBarItem(title: "Tab 2")
                 }
             if User.isLoggedIn {
                 MyProfileView()
-                    .pagerTabItem(tag: 3) {
+                    .pagerTabItem(tag: 2) {
                         TitleNavBarItem(title: "Profile")
                     }
             }
         }
+        .pagerContext(Int.self)
 
     }
 }
@@ -91,20 +92,21 @@ struct MyPagerView: View {
             ..
             .
         }
+        .pagerContext(Int.self)
     }
 }
 ```
 
 As you may've already noticed, everything is SwiftUI code, so you can update the child views according to SwiftUI state objects as shown above with `if User.isLoggedIn`.
 
-The user can also configure if the swipe action is enable or not (the swipe is based on a drag gesture) and setup what edges have the gesture disabled.
+The user can also configure whether swipe paging is enabled and which horizontal edges should disable edge swiping.
 
 Params:
-- `swipeGestureEnabled`: swipe is enabled or not (default is true).
-- `edgeSwipeGestureDisabled`: is an HorizontalContainerEdge (OptionSet) value where the set could have this options: .left, .right (default is an empty set).
+- `swipeGestureEnabled`: Whether swipe paging is enabled (default is true).
+- `edgeSwipeGestureDisabled`: A `HorizontalContainerEdge` `OptionSet`; available options are `.left` and `.right` (default is an empty set).
 
 Why is this parameter important?
-This parameter is important in the context of the next PagerTabStripView example in `MyPagerView2`. If the pager is on the first page and the user tries to swipe left, it's posible that the parent view container will be triggered instead of the pager's swipe gesture, since the drag gesture can catch the parent view gesture. The `edgeSwipeGestureDisabled` paramenter prevents this from happening.
+This parameter is important in the context of the next PagerTabStripView example in `MyPagerView2`. If the pager is on the first page and the user tries to swipe left, the pager's horizontal scroll can compete with the parent container gesture. The `edgeSwipeGestureDisabled` parameter prevents that edge swipe from being handled by the pager.
 
 ```swift
 struct MyPagerView2: View {
@@ -122,14 +124,16 @@ struct MyPagerView2: View {
             ..
             .
         }
+        .pagerContext(Int.self)
     }
 }
 ```
 
+Every pager needs a pager context whose type matches the tab tags. For example, use `.pagerContext(Int.self)` for `Int` tags, `.pagerContext(String.self)` for `String` tags, or `.pagerContext(MyPage.self)` for a custom `Hashable` enum. Add the modifier to the pager hierarchy after creating the pager and applying its style. Nested pagers should each get their own pager context.
 
 ### Customizing the pager style
 
-PagerTabStripView provides 5 different ways to display the views, which can be selected and customized using the `pagerTabStripViewStyle` modifier.
+PagerTabStripView provides 4 built-in ways to display the views, which can be selected and customized using the `pagerTabStripViewStyle` modifier.
 
 #### Scrollable style
 
@@ -139,6 +143,7 @@ The customizable settings are:
 - `placedInToolbar`: If true TabBar items are placed in the NavigationBar. The pager must be a added inside a NavigationView.
 - `pagerAnimationOnTap`: Animation used when the selection changes. 
 - `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the transaltion. 
+- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
 - `tabItemSpacing`: Horizontal margin between TabBar items 
 - `tabItemHeight`: Height of the TabBar items continer.
 - `padding`: Padding of the TabBar items continer.
@@ -171,6 +176,7 @@ struct PagerView: View {
 	    					     indicatorView: {
             						Rectangle().fill(.blue).cornerRadius(5)
             					     }))
+        .pagerContext(Int.self)
 	}
 }
 ```
@@ -189,6 +195,7 @@ The customizable settings are:
 - `placedInToolbar`: If true TabBar items are placed in the NavigationBar. Pager must be a added inside a NavigationView.
 - `pagerAnimationOnTap`: Animation used when selection changes. 
 - `pagerAnimationOnSwipe`: Animation used on drag gesture traslation changes. 
+- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
 - `tabItemSpacing`: Horizontal margin among tabbar items 
 - `tabItemHeight`: TabBar items continer height
 - `padding`: TabBar items continer padding
@@ -223,6 +230,7 @@ struct PagerView: View {
 	    			           indicatorView: {
             				   	Rectangle().fill(.gray).cornerRadius(5)
             				   }))
+        .pagerContext(String.self)
 	}
 }
 ```
@@ -241,6 +249,7 @@ The customizable settings are:
 - `placedInToolbar`: If set to true, the TabBar items will be placed in the NavigationBar. The Pager must be a added inside a NavigationView.
 - `pagerAnimationOnTap`: Animation used when the selection changes. 
 - `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the traslation. 
+- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
 - `indicatorViewHeight`: Height of the Indicator view.
 - `indicatorView`: View representing the indicator view. 
 
@@ -256,6 +265,7 @@ The customizable settings are:
 - `placedInToolbar`: If true TabBar items are placed in the NavigationBar. The Pager must be a added inside a NavigationView.
 - `pagerAnimationOnTap`: Animation used when the selection changes. 
 - `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the traslation.
+- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
 - `backgroundColor`: Color of the segmented picker.
 - `padding`: Padding of the Segmented picker.
 
@@ -269,9 +279,9 @@ We can build any custom styles by using bar and scrollablebar styles and providi
 
 ```
         .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
-                                           pagerAnimation: .interactiveSpring(response: 0.5,
-                                                                              dampingFraction: 1.00,
-                                                                              blendDuration: 0.25),
+                                           pagerAnimationOnTap: .interactiveSpring(response: 0.5,
+                                                                                  dampingFraction: 1.00,
+                                                                                  blendDuration: 0.25),
                                            tabItemHeight: 48,
                                            barBackgroundView: {
             LinearGradient(
@@ -283,6 +293,7 @@ We can build any custom styles by using bar and scrollablebar styles and providi
         }, indicatorView: {
             Text("👍🏻").offset(x: 0, y: -24)
         }))
+        .pagerContext(Color.self)
 ```
 
 See how it looks:
@@ -294,7 +305,7 @@ See how it looks:
 
 ## Navigation bar
 
-The navigation bar supports custom tab bar views for each page. Ypu can specify each tab bar item inline inside the pagerTabItem modifier or in a independent struct by conforming to a View protocol.
+The navigation bar supports custom tab bar views for each page. You can specify each tab bar item inline inside the pagerTabItem modifier or in an independent struct by conforming to the `View` protocol.
 
 For simplicity, we are going to implement a nav bar item with only a title. You can find more examples in the example app.
 
@@ -314,6 +325,50 @@ struct TitleNavBarItem: View {
 }
 ```
 
+If your custom navigation item needs transition progress, read the `PagerSettings` environment value. Because PagerTabStripView uses Perception internally, wrap the body in `WithPerceptionTracking` when observing pager state.
+
+```swift
+import SwiftUI
+import PagerTabStripView
+import Perception
+
+struct ProgressNavBarItem<SelectionType: Hashable>: View {
+    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings
+
+    let title: String
+    let tag: SelectionType
+
+    var body: some View {
+        WithPerceptionTracking {
+            Text(title)
+                .opacity(0.4 + pagerSettings.transition.progress(for: tag) * 0.6)
+        }
+    }
+}
+```
+
+To place the navigation bar yourself, set `managedBySelf` to true and add `NavBarWrapperView(selection:)` where you want the pager navigation to appear.
+
+```swift
+PagerTabStripView(selection: $selection) {
+    GalleryView()
+        .pagerTabItem(tag: Page.gallery) {
+            Image(systemName: "photo.stack")
+        }
+    ListView()
+        .pagerTabItem(tag: Page.list) {
+            Image(systemName: "list.bullet")
+        }
+}
+.toolbar {
+    ToolbarItem(placement: .principal) {
+        NavBarWrapperView(selection: $selection)
+    }
+}
+.pagerTabStripViewStyle(.scrollableBarButton(managedBySelf: true))
+.pagerContext(Page.self)
+```
+
 <div style="text-align:center">
     <img src="Example/Media/setStateCallback.gif">
 </div>
@@ -327,6 +382,16 @@ Follow these 3 steps to run Example project
 - Run the _Example_ project.
 
 ## Installation
+
+### Swift Package Manager
+
+Add PagerTabStripView as a package dependency:
+
+```swift
+.package(url: "https://github.com/xmartlabs/PagerTabStripView.git", branch: "master")
+```
+
+The package depends on [SwiftUIX](https://github.com/SwiftUIX/SwiftUIX) and [swift-perception](https://github.com/pointfreeco/swift-perception).
 
 ### CocoaPods
 
@@ -346,8 +411,10 @@ github "xmartlabs/PagerTabStripView" ~> 4.0
 
 ## Requirements
 
-- iOS 16+
-- Xcode 14.2+
+- iOS 15+
+- macOS 14+
+- Swift 5.9+
+- Xcode 15+
 
 ## Author
 
