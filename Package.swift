@@ -8,13 +8,15 @@ let package = Package(
         .library(name: "PagerTabStripView", targets: ["PagerTabStripView"])
     ],
     dependencies: [
+        .package(url: "https://github.com/SwiftUIX/SwiftUIX.git", from: "0.3.0"),
         .package(url: "https://github.com/pointfreeco/swift-perception", from: "1.6.0")
     ],
     targets: [
         .target(
             name: "PagerTabStripView",
             dependencies: [
-                .product(name: "Perception", package: "swift-perception")
+                .product(name: "Perception", package: "swift-perception"),
+                .product(name: "SwiftUIX", package: "SwiftUIX")
             ],
             path: "Sources"
         ),

@@ -120,6 +120,12 @@ public final class PagerSettings<SelectionType> where SelectionType: Hashable {
         }
     }
 
+    var scrollContentOffset: CGPoint = .zero {
+        didSet {
+            syncContentOffsetWithScrollContentOffset()
+        }
+    }
+
     public private(set) var transition = TransitionProgress<SelectionType>.none
 
     private(set) var items = [SelectionType: DataItem<SelectionType>]() {
@@ -130,6 +136,58 @@ public final class PagerSettings<SelectionType> where SelectionType: Hashable {
     private(set) var itemsOrderedByIndex = [SelectionType]()
 
     public init() {}
+
+    func updateWidth(_ width: CGFloat, selection: SelectionType) {
+        self.width = width
+        updateScrollContentOffset(for: selection)
+    }
+
+    func updateScrollContentOffset(_ contentOffset: CGPoint) {
+        scrollContentOffset = contentOffset
+    }
+
+    func updateContentOffset(_ contentOffset: CGFloat) {
+        self.contentOffset = contentOffset
+        let scrollOffset = CGPoint(x: -contentOffset, y: scrollContentOffset.y)
+
+        if scrollContentOffset != scrollOffset {
+            scrollContentOffset = scrollOffset
+        }
+    }
+
+    func updateScrollContentOffset(for selection: SelectionType) {
+        guard let scrollOffset = scrollContentOffset(for: selection) else {
+            return
+        }
+
+        updateScrollContentOffset(scrollOffset)
+    }
+
+    func nearestSelectionForCurrentScrollOffset() -> SelectionType? {
+        guard width > 0 else {
+            return nil
+        }
+
+        let index = Int(round(scrollContentOffset.x / width))
+
+        return itemsOrderedByIndex[safe: index]
+    }
+
+    func settledSelectionForCurrentScrollOffset(tolerance: CGFloat = 1) -> SelectionType? {
+        guard width > 0 else {
+            return nil
+        }
+
+        let rawIndex = scrollContentOffset.x / width
+        let roundedIndex = round(rawIndex)
+        let distance = abs(scrollContentOffset.x - roundedIndex * width)
+
+        guard distance <= tolerance else {
+            return nil
+        }
+
+        return itemsOrderedByIndex[safe: Int(roundedIndex)]
+    }
 
     private func recalculateTransition() {
         let indexAndPercentage = width == 0 ? 0 : -contentOffset / width
@@ -168,5 +226,21 @@ public final class PagerSettings<SelectionType> where SelectionType: Hashable {
 
     func indexOf(tag: SelectionType) -> Int? {
         return itemsOrderedByIndex.firstIndex(of: tag)
+    }
+
+    private func scrollContentOffset(for selection: SelectionType) -> CGPoint? {
+        guard let index = indexOf(tag: selection) else {
+            return nil
+        }
+
+        return CGPoint(x: CGFloat(index) * width, y: scrollContentOffset.y)
+    }
+
+    private func syncContentOffsetWithScrollContentOffset() {
+        let contentOffset = -scrollContentOffset.x
+
+        if self.contentOffset != contentOffset {
+            self.contentOffset = contentOffset
+        }
     }
 }
