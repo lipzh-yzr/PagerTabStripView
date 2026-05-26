@@ -110,7 +110,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
 
     @ViewBuilder
     @MainActor private func pagerPages(in geometryProxy: GeometryProxy) -> some View {
-//        #if canImport(SwiftUIX) && ((os(iOS) && canImport(CoreTelephony)) || os(tvOS) || targetEnvironment(macCatalyst))
+        #if canImport(SwiftUIX) && ((os(iOS) && canImport(CoreTelephony)) || os(tvOS) || targetEnvironment(macCatalyst))
         CocoaScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 0) {
                 WithPerceptionTracking {
@@ -139,9 +139,10 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
         .alwaysBounceHorizontal(!shouldDisableHorizontalBounce)
         .alwaysBounceVertical(false)
         .scrollDisabled(!swipeGestureEnabled)
-//        #else
-//        legacyPagerPages(in: geometryProxy)
-//        #endif
+        .contentInsetAdjustmentBehavior(.never)
+        #else
+        legacyPagerPages(in: geometryProxy)
+        #endif
     }
 
     @ViewBuilder
