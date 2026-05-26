@@ -13,13 +13,17 @@ internal struct ScrollableNavBarView<SelectionType>: View where SelectionType: H
 
     @Binding var selection: SelectionType
     private var pagerSettings: PagerSettings<SelectionType>
+    private var items: [NavBarContentItem<SelectionType>]
     @Environment(\.pagerStyle) private var style: PagerStyle
     @State private var appeared = false
     @State private var itemFrames = [SelectionType: CGRect]()
 
-    public init(selection: Binding<SelectionType>, pagerSettings: PagerSettings<SelectionType>) {
+    public init(selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>,
+                items: [NavBarContentItem<SelectionType>]) {
         self._selection = selection
         self.pagerSettings = pagerSettings
+        self.items = items
     }
 
     @MainActor var body: some View {
@@ -29,10 +33,13 @@ internal struct ScrollableNavBarView<SelectionType>: View where SelectionType: H
                     ScrollView(.horizontal, showsIndicators: false) {
                         ZStack(alignment: .bottomLeading) {
                             HStack(spacing: internalStyle.tabItemSpacing) {
-                                ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
-                                    NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
-                                        .background(itemFrameReader(tag: tag))
-                                        .tag(tag)
+                                ForEach(items) { item in
+                                    NavBarItem(id: item.id,
+                                               view: item.view,
+                                               selection: $selection,
+                                               pagerSettings: pagerSettings)
+                                        .background(itemFrameReader(tag: item.id))
+                                        .tag(item.id)
                                 }
                             }
                             indicatorView(style: internalStyle)

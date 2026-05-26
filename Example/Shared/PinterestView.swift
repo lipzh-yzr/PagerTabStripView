@@ -32,25 +32,32 @@ struct PinterestView: View {
                          PageItem(tag: 6, title: "Mini", posts: TweetsModel().posts)
     ]
 
+    private var visibleItems: [PageItem] {
+        toggle ? items : Array(items.reversed().dropLast(5))
+    }
+
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    ForEach(toggle ? items : items.reversed().dropLast(5), id: \.title) { item in
-                        PostsList(items: item.posts, withDescription: item.withDescription)
-                            .pagerTabItem(tag: item.tag) {
-                                ZStack {
-                                    Text(item.title)
-                                        .foregroundColor(selection == item.tag ? .black : .white)
-                                        .font(.subheadline)
-                                        .frame(maxHeight: .infinity)
-                                        .animation(.default, value: selection)
-                                        .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+            VStack(spacing: 0) {
+                NavBarWrapperView(visibleItems, id: \.tag, selection: $selection) { item in
+                    ZStack {
+                        Text(item.title)
+                            .foregroundColor(selection == item.tag ? .black : .white)
+                            .font(.subheadline)
+                            .frame(maxHeight: .infinity)
+                            .animation(.default, value: selection)
+                            .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 
-                                }
-                                .frame(height: 40)
-                            }
+                    }
+                    .frame(height: 40)
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(visibleItems, id: \.tag) { item in
+                            PostsList(items: item.posts, withDescription: item.withDescription)
                         }
+                    }
                 }
             }
             .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,

@@ -27,6 +27,10 @@ struct InstagramView: View {
     @StateObject var savedModel = ListModel()
     @State var edgeSwipe: HorizontalContainerEdge = .both
 
+    private var pages: [Page] {
+        toggle ? [.gallery, .list, .like, .saved] : [.gallery, .list]
+    }
+
     @MainActor var body: some View {
         WithPerceptionTracking {
             PagerTabStripView(
@@ -34,44 +38,47 @@ struct InstagramView: View {
                 selection: $selection
             ) {
                 WithPerceptionTracking {
-                    PostsList(isLoading: $galleryModel.isLoading, items: galleryModel.posts)
-                        .pagerTabItem(tag: Page.gallery) {
-                            InstagramNavBarItem(
-                                imageName: "photo.stack",
-                                selection: $selection,
-                                tag: Page.gallery
-                            )
+                    ForEach(pages, id: \.self) { page in
+                        switch page {
+                        case .gallery:
+                            PostsList(isLoading: $galleryModel.isLoading, items: galleryModel.posts)
+                        case .list:
+                            PostsList(isLoading: $listModel.isLoading, items: listModel.posts, withDescription: false)
+                        case .like:
+                            PostsList(isLoading: $likedModel.isLoading, items: likedModel.posts)
+                        case .saved:
+                            PostsList(isLoading: $savedModel.isLoading, items: savedModel.posts, withDescription: false)
                         }
-                    PostsList(isLoading: $listModel.isLoading, items: listModel.posts, withDescription: false)
-                        .pagerTabItem(tag: Page.list) {
-                            InstagramNavBarItem(imageName: "chart.bar.doc.horizontal" /* "list.bullet" */, selection: $selection, tag: Page.list)
-                        }
-                    if toggle {
-                        PostsList(isLoading: $likedModel.isLoading, items: likedModel.posts)
-                            .pagerTabItem(tag: Page.like) {
-                                InstagramNavBarItem(imageName: "heart", selection: $selection, tag: Page.like)
-                            }
-                        PostsList(isLoading: $savedModel.isLoading, items: savedModel.posts, withDescription: false)
-                            .pagerTabItem(tag: Page.saved) {
-                                InstagramNavBarItem(imageName: "photo.stack" /* "bookmark"*/, selection: $selection, tag: Page.saved)
-                            }
                     }
                 }
             }
             .toolbar(content: {
                 ToolbarItem(placement: .principal) {
-                    NavBarWrapperView(selection: $selection)
+                    NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+                        InstagramNavBarItem(imageName: imageName(for: page), selection: $selection, tag: page)
+                    }
                 }
             })
-            .pagerTabStripViewStyle(.scrollableBarButton(placedInToolbar: false,
-                                                         managedBySelf: true,
-                                                         tabItemSpacing: 50,
+            .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 50,
                                                          tabItemHeight: 50, indicatorViewHeight: 2,
                                                          indicatorView: { Rectangle().fill(Color(.systemBlue)).cornerRadius(1) }))
             .pagerContext(Page.self)
             .navigationBarItems(trailing: Button("Refresh") {
                 toggle.toggle()
             })
+        }
+    }
+
+    private func imageName(for page: Page) -> String {
+        switch page {
+        case .gallery:
+            return "photo.stack"
+        case .list:
+            return "chart.bar.doc.horizontal"
+        case .like:
+            return "heart"
+        case .saved:
+            return "photo.stack"
         }
     }
 }

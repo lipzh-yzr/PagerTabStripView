@@ -9,13 +9,6 @@ import SwiftUI
 
 extension View {
 
-    /// Sets the navigation bar item associated with this page.
-    ///
-    /// - Parameter pagerTabView: The navigation bar item to associate with this page.
-    public func pagerTabItem<TagType, V>(tag: TagType, @ViewBuilder _ pagerTabView: @escaping () -> V) -> some View where TagType: Hashable, V: View {
-        return self.modifier(PagerTabItemModifier<TagType, V>(tag: tag, navTabView: pagerTabView))
-    }
-
     /// Sets the style for the pager view within the the current environment.
     ///
     /// - Parameter style: The style to apply to this pager view.

@@ -24,24 +24,26 @@ struct CustomStyleView: View {
 
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    ForEach(🌈, id: \.self) { color in
-                        ZStack(alignment: .center) {
-                            color
-                            Text("Any custom View You like")
-                        }
-                        .pagerTabItem(tag: color) {
-                            Capsule()
-                                .frame(height: 32)
-                                .padding(4)
-                                .foregroundColor(color)
+            VStack(spacing: 0) {
+                NavBarWrapperView(🌈, id: \.self, selection: $selection) { color in
+                    Capsule()
+                        .frame(height: 32)
+                        .padding(4)
+                        .foregroundColor(color)
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(🌈, id: \.self) { color in
+                            ZStack(alignment: .center) {
+                                color
+                                Text("Any custom View You like")
+                            }
                         }
                     }
                 }
             }
-            .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
-                                               pagerAnimationOnTap: .interactiveSpring(response: 0.5,
+            .pagerTabStripViewStyle(.barButton(pagerAnimationOnTap: .interactiveSpring(response: 0.5,
                                                                                        dampingFraction: 1.00,
                                                                                        blendDuration: 0.25),
                                                tabItemHeight: 48,

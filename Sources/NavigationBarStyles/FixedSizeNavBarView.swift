@@ -14,11 +14,15 @@ internal struct FixedSizeNavBarView<SelectionType>: View where SelectionType: Ha
     @Binding private var selection: SelectionType
     @Environment(\.pagerStyle) private var style: PagerStyle
     private var pagerSettings: PagerSettings<SelectionType>
+    private var items: [NavBarContentItem<SelectionType>]
     @State private var appeared = false
 
-    public init(selection: Binding<SelectionType>, pagerSettings: PagerSettings<SelectionType>) {
+    public init(selection: Binding<SelectionType>,
+                pagerSettings: PagerSettings<SelectionType>,
+                items: [NavBarContentItem<SelectionType>]) {
         self._selection = selection
         self.pagerSettings = pagerSettings
+        self.items = items
     }
 
     @MainActor var body: some View {
@@ -27,10 +31,13 @@ internal struct FixedSizeNavBarView<SelectionType>: View where SelectionType: Ha
                 GeometryReader { geometryProxy in
                     ZStack(alignment: .bottomLeading) {
                         HStack(spacing: internalStyle.tabItemSpacing) {
-                            ForEach(pagerSettings.itemsOrderedByIndex, id: \.self) { tag in
-                                NavBarItem(id: tag, selection: $selection, pagerSettings: pagerSettings)
+                            ForEach(items) { item in
+                                NavBarItem(id: item.id,
+                                           view: item.view,
+                                           selection: $selection,
+                                           pagerSettings: pagerSettings)
                                     .frame(maxWidth: .infinity)
-                                    .tag(tag)
+                                    .tag(item.id)
                             }
                         }
                         .frame(width: geometryProxy.size.width, height: geometryProxy.size.height)

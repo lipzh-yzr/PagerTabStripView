@@ -15,25 +15,26 @@ struct BarStyleView: View {
     @StateObject var tweetsModel = TweetsModel()
     @StateObject var mediaModel = TweetsModel()
     @StateObject var likesModel = TweetsModel()
+    private let tabs = [0, 1, 2]
 
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
-                        .pagerTabItem(tag: 0) {
-                        }
-                    
-                    PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
-                        .pagerTabItem(tag: 1) {
-                        }
-                    
-                    PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
-                        .pagerTabItem(tag: 2) {
-                        }
+            VStack(spacing: 0) {
+                NavBarWrapperView(tabs, id: \.self, selection: $selection) { _ in
+                    EmptyView()
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
+
+                        PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
+
+                        PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
+                    }
                 }
             }
-            .pagerTabStripViewStyle(.bar(placedInToolbar: false, indicatorViewHeight: 6) {
+            .pagerTabStripViewStyle(.bar(indicatorViewHeight: 6) {
                 Rectangle().fill(.yellow)
             })
             .pagerContext(Int.self)

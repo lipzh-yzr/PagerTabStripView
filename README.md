@@ -27,43 +27,55 @@ PagerTabStripView is the first pager view built in pure SwiftUI. It provides a c
 Unlike Apple's TabView it provides:
 
 1. Flexible way to fully customize pager tab views.
-2. Each pagerTabItem view can be of different type.
+2. Each pager tab item view can be of different type.
 3. Bar that contains pager tab item is placed on top.
 4. Indicator view indicates selected child view.
-5. Ability to update pagerTabItem according to highlighted, selected, normal state.
+5. Ability to update pager tab items according to highlighted, selected, normal state.
 6. Ability to embed one page within another and not breaking scroll behavior. 
 7. Ability to update UI according page selection and transition progress among pages. 
 
 ## Usage
 
-Creating a page view is super straightforward, you just need to place your custom tab views into a `PagerTabStripView` view and apply the `pagerTabItem` modifier to each one to specify its navigation bar tab item.
-The `tag` parameter is the value to identify the tab item. It can be any Hashable value and it must be unique.
+Creating a page view is straightforward: lay out `NavBarWrapperView` wherever you want the pager navigation to appear, then place `PagerTabStripView` where the pages should render. Pass the same ordered data to the navigation bar and the pager pages so the tab identifiers match the page order.
+The `id` parameter is the value that identifies each tab item. It can be any `Hashable` value and it must be unique.
 
 ```swift
 import PagerTabStripView
 
+private struct Page: Identifiable {
+    let id: Int
+    let title: String
+}
+
 struct MyPagerView: View {
+    @State private var selection = 0
+
+    private let pages = [
+        Page(id: 0, title: "Tab 1"),
+        Page(id: 1, title: "Tab 2"),
+        Page(id: 2, title: "Profile")
+    ]
 
     var body: some View {
+        VStack(spacing: 0) {
+            NavBarWrapperView(pages, id: \.id, selection: $selection) { page in
+                TitleNavBarItem(title: page.title)
+            }
 
-        PagerTabStripView() {
-            MyFirstView()
-                .pagerTabItem(tag: 0) {
-                    TitleNavBarItem(title: "Tab 1")
-                }
-            MySecondView()
-                .pagerTabItem(tag: 1) {
-                    TitleNavBarItem(title: "Tab 2")
-                }
-            if User.isLoggedIn {
-                MyProfileView()
-                    .pagerTabItem(tag: 2) {
-                        TitleNavBarItem(title: "Profile")
+            PagerTabStripView(selection: $selection) {
+                ForEach(pages) { page in
+                    switch page.id {
+                    case 0:
+                        MyFirstView()
+                    case 1:
+                        MySecondView()
+                    default:
+                        MyProfileView()
                     }
+                }
             }
         }
         .pagerContext(Int.self)
-
     }
 }
 ```
@@ -75,22 +87,24 @@ struct MyPagerView: View {
 </br>
 </br>
 
-To specify the initial selected page you can pass the `selection` init parameter (for it to work properly this value have to be equal to some tag value of the tab items).
+To specify the initial selected page you can pass the `selection` init parameter to both `NavBarWrapperView` and `PagerTabStripView` (for it to work properly this value has to be equal to one of the tab ids).
 
 ```swift
 struct MyPagerView: View {
 
     @State var selection = 1
+    let pages = [1, 2, 3]
 
     var body: some View {
-        PagerTabStripView(selection: $selection) {
-            MyFirstView()
-                .pagerTabItem(tag: 1) {
-                    TitleNavBarItem(title: "Tab 1")
-                }
-            ...
-            ..
-            .
+        VStack(spacing: 0) {
+            NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+                TitleNavBarItem(title: "Tab \(page)")
+            }
+
+            PagerTabStripView(selection: $selection) {
+                MyFirstView()
+                ...
+            }
         }
         .pagerContext(Int.self)
     }
@@ -114,15 +128,16 @@ struct MyPagerView2: View {
     @State var selection = 1
 
     var body: some View {
-        PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left]),
-			  selection: $selection) {
-            MyFirstView()
-                .pagerTabItem(tag: 1) {
-                    TitleNavBarItem(title: "Tab 1")
-                }
-            ...
-            ..
-            .
+        VStack(spacing: 0) {
+            NavBarWrapperView([1, 2], id: \.self, selection: $selection) { page in
+                TitleNavBarItem(title: "Tab \(page)")
+            }
+
+            PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left]),
+                              selection: $selection) {
+                MyFirstView()
+                ...
+            }
         }
         .pagerContext(Int.self)
     }
@@ -133,179 +148,74 @@ Every pager needs a pager context whose type matches the tab tags. For example, 
 
 ### Customizing the pager style
 
-PagerTabStripView provides 4 built-in ways to display the views, which can be selected and customized using the `pagerTabStripViewStyle` modifier.
+PagerTabStripView provides 4 built-in styles, selected with the `pagerTabStripViewStyle` modifier:
 
-#### Scrollable style
+- `.scrollableBarButton(...)`: horizontal scrolling tab bar for many pages.
+- `.barButton(...)`: fixed-width tab bar for small page counts.
+- `.bar(...)`: indicator-only bar.
+- `.segmentedControl(...)`: segmented picker.
 
-This style allows you to add as many pages as you want. The tabs are placed inside a horizontal scroll for large number of pages.
-
-The customizable settings are:
-- `placedInToolbar`: If true TabBar items are placed in the NavigationBar. The pager must be a added inside a NavigationView.
-- `pagerAnimationOnTap`: Animation used when the selection changes. 
-- `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the transaltion. 
-- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
-- `tabItemSpacing`: Horizontal margin between TabBar items 
-- `tabItemHeight`: Height of the TabBar items continer.
-- `padding`: Padding of the TabBar items continer.
-- `barBackgroundView`: Background view of the TabBar items container. 
-- `indicatorViewHeight`: Height of the indicator view.
-- `indicatorView`: View representing the indicator view. 
+The pager never inserts navigation UI by itself. Put `NavBarWrapperView` directly in a `VStack`, a toolbar item, or any other layout owned by your app.
 
 ```swift
 struct PagerView: View {
-
     @State var selection = 1
+    let pages = [1, 2]
 
-	var body: some View {
-		PagerTabStripView(selection: $selection) {
-			MyView()
-				.pagerTabItem(tag: 1) {
-					TitleNavBarItem(title: "First big width")
-				}
-			AnotherView()
-				.pagerTabItem(tag: 2) {
-					TitleNavBarItem(title: "Short")
-				}
-            ...
-            ..
-            .
+    var body: some View {
+        VStack(spacing: 0) {
+            NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+                TitleNavBarItem(title: page == 1 ? "First big width" : "Short")
+            }
 
-		}
-        .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15, 
-						     tabItemHeight: 50, 
-	    					     indicatorView: {
-            						Rectangle().fill(.blue).cornerRadius(5)
-            					     }))
+            PagerTabStripView(selection: $selection) {
+                MyView()
+                AnotherView()
+            }
+        }
+        .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,
+                                                     tabItemHeight: 50,
+                                                     indicatorView: {
+                                                        Rectangle().fill(.blue).cornerRadius(5)
+                                                     }))
         .pagerContext(Int.self)
-	}
+    }
 }
 ```
 
-In this example, we add some settings like the tab bar height, indicator view and tab item spaces. Let's see how it looks!
+Common style settings:
+
+- `pagerAnimationOnTap`: Animation used when the selection changes.
+- `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the translation.
+- `tabItemSpacing`, `tabItemHeight`, `padding`: Available on bar-button styles.
+- `barBackgroundView`, `indicatorViewHeight`, `indicatorView`: Available on indicator styles.
+- `backgroundColor`, `padding`: Available on segmented style.
+
+For toolbar placement, put `NavBarWrapperView` in your own toolbar:
+
+```swift
+PagerTabStripView(selection: $selection) {
+    GalleryView()
+    ListView()
+}
+.toolbar {
+    ToolbarItem(placement: .principal) {
+        NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+            Image(systemName: page.iconName)
+        }
+    }
+}
+.pagerTabStripViewStyle(.scrollableBarButton())
+.pagerContext(Page.self)
+```
 
 <div style="text-align:center">
     <img src="Example/Media/scrollableStyleExample.gif">
 </div>
 
-#### Button bar style
-
-This style places all TabBar items in a container, with each item having the same width. It is ideal for pages with 2-4 pages. The same settings as the Scrollable style can be customized.
-
-The customizable settings are:
-- `placedInToolbar`: If true TabBar items are placed in the NavigationBar. Pager must be a added inside a NavigationView.
-- `pagerAnimationOnTap`: Animation used when selection changes. 
-- `pagerAnimationOnSwipe`: Animation used on drag gesture traslation changes. 
-- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
-- `tabItemSpacing`: Horizontal margin among tabbar items 
-- `tabItemHeight`: TabBar items continer height
-- `padding`: TabBar items continer padding
-- `barBackgroundView`: TabBar items container background view. 
-- `indicatorViewHeight`: Indicator view height
-- `indicatorView`: View representing the indicator view. 
-
-```swift
-struct PagerView: View {
-
-    @State var selection = "Tab 1"
-
-	var body: some View {
-		PagerTabStripView(selection: $selection) {
-			MyView()
-				.pagerTabItem(tag: "Tab 1") {
-					TitleNavBarItem(title: "Tab 1")
-				}
-			AnotherView()
-				.pagerTabItem(tag: "Tab 2") {
-					TitleNavBarItem(title: "Tab 2")
-				}
-			if User.isLoggedIn {
-				ProfileView()
-					.pagerTabItem(tag: "Profile") {
-						TitleNavBarItem(title: "Profile")
-                    }
-			}
-		}
-        .pagerTabStripViewStyle(.barButton(tabItemSpacing: 15, 
-					   tabItemHeight: 50, 
-	    			           indicatorView: {
-            				   	Rectangle().fill(.gray).cornerRadius(5)
-            				   }))
-        .pagerContext(String.self)
-	}
-}
-```
-
-In this example, we add some settings like the tab bar height, indicator view and indicator bar height. Let's see how it looks!
-
-<div style="text-align:center">
-    <img src="Example/Media/addPagerSettings.gif">
-</div>
-
-#### Bar style
-
-This style only displays a bar that indicates the current selected page. 
-
-The customizable settings are:
-- `placedInToolbar`: If set to true, the TabBar items will be placed in the NavigationBar. The Pager must be a added inside a NavigationView.
-- `pagerAnimationOnTap`: Animation used when the selection changes. 
-- `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the traslation. 
-- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
-- `indicatorViewHeight`: Height of the Indicator view.
-- `indicatorView`: View representing the indicator view. 
-
-<div style="text-align:center">
-    <img src="Example/Media/barStyleExample.gif">
-</div>
-
-#### Segmented style
-
-This style uses a Segmented Picker to indicate the selected page. You can indicate the segmented color, its padding and if you want it to be plced inside the toolbar.
-
-The customizable settings are:
-- `placedInToolbar`: If true TabBar items are placed in the NavigationBar. The Pager must be a added inside a NavigationView.
-- `pagerAnimationOnTap`: Animation used when the selection changes. 
-- `pagerAnimationOnSwipe`: Animation used when the drag gesture changes the traslation.
-- `managedBySelf`: If true, PagerTabStripView does not insert the navigation bar. Use `NavBarWrapperView(selection:)` to place it yourself.
-- `backgroundColor`: Color of the segmented picker.
-- `padding`: Padding of the Segmented picker.
-
-<div style="text-align:center">
-    <img src="Example/Media/segmentedStyleExample.gif">
-</div>
-
-#### Custom style
-
-We can build any custom styles by using bar and scrollablebar styles and providing custom views representing the indicator and the tabbar container view. Check out the example below. There are some other examples in the Example app. 
-
-```
-        .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
-                                           pagerAnimationOnTap: .interactiveSpring(response: 0.5,
-                                                                                  dampingFraction: 1.00,
-                                                                                  blendDuration: 0.25),
-                                           tabItemHeight: 48,
-                                           barBackgroundView: {
-            LinearGradient(
-               colors: 🌈,
-               startPoint: .topLeading,
-               endPoint: .bottomTrailing
-           )
-           .opacity(0.2)
-        }, indicatorView: {
-            Text("👍🏻").offset(x: 0, y: -24)
-        }))
-        .pagerContext(Color.self)
-```
-
-See how it looks:
-
-<div style="text-align:center">
-    <img src="Example/Media/customStyleExample.gif">
-</div>
-
-
 ## Navigation bar
 
-The navigation bar supports custom tab bar views for each page. You can specify each tab bar item inline inside the pagerTabItem modifier or in an independent struct by conforming to the `View` protocol.
+The navigation bar supports custom tab bar views for each page. You provide each tab item in the `NavBarWrapperView` content builder.
 
 For simplicity, we are going to implement a nav bar item with only a title. You can find more examples in the example app.
 
@@ -347,25 +257,18 @@ struct ProgressNavBarItem<SelectionType: Hashable>: View {
 }
 ```
 
-To place the navigation bar yourself, set `managedBySelf` to true and add `NavBarWrapperView(selection:)` where you want the pager navigation to appear.
+To use transition progress, pass the same tag into your custom tab item:
 
 ```swift
-PagerTabStripView(selection: $selection) {
-    GalleryView()
-        .pagerTabItem(tag: Page.gallery) {
-            Image(systemName: "photo.stack")
-        }
-    ListView()
-        .pagerTabItem(tag: Page.list) {
-            Image(systemName: "list.bullet")
-        }
+NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+    ProgressNavBarItem(title: page.title, tag: page)
 }
-.toolbar {
-    ToolbarItem(placement: .principal) {
-        NavBarWrapperView(selection: $selection)
+
+PagerTabStripView(selection: $selection) {
+    ForEach(pages, id: \.self) { page in
+        pageView(for: page)
     }
 }
-.pagerTabStripViewStyle(.scrollableBarButton(managedBySelf: true))
 .pagerContext(Page.self)
 ```
 

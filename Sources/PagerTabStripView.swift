@@ -104,7 +104,6 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                         }
                 }
             }
-            .modifier(NavBarModifier(selection: $selection))
             .clipped()
         }
     }

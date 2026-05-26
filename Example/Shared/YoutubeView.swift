@@ -9,6 +9,12 @@ import SwiftUI
 import PagerTabStripView
 import Perception
 
+private struct YoutubePage: Identifiable {
+    let id: Int
+    let title: String
+    let imageName: String
+}
+
 struct YoutubeView: View {
 
     @StateObject var homeModel = HomeModel()
@@ -19,42 +25,56 @@ struct YoutubeView: View {
 
     @State var toggle: Bool = false
 
+    private var pages: [YoutubePage] {
+        var pages = [
+            YoutubePage(id: 0, title: "Home", imageName: "house"),
+            YoutubePage(id: 1, title: "Trending", imageName: "flame")
+        ]
+
+        if toggle {
+            pages.append(YoutubePage(id: 2, title: "Account", imageName: "person.fill"))
+        }
+
+        return pages
+    }
+
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    PostsList(isLoading: $homeModel.isLoading, items: homeModel.posts)
-                        .pagerTabItem(tag: 0) {
-                            YoutubeNavBarItem(title: "Home", imageName: "house", selection: $selection, tag: 0)
-                        }.onAppear {
-                            homeModel.isLoading = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                homeModel.isLoading = false
-                            }
-                        }
+            VStack(spacing: 0) {
+                NavBarWrapperView(pages, id: \.id, selection: $selection) { page in
+                    YoutubeNavBarItem(title: page.title, imageName: page.imageName, selection: $selection, tag: page.id)
+                }
 
-                    PostsList(isLoading: $trendingModel.isLoading, items: trendingModel.posts, withDescription: false)
-                        .pagerTabItem(tag: 1) {
-                            YoutubeNavBarItem(title: "Trending", imageName: "flame", selection: $selection, tag: 1)
-                        }
-                        .onAppear {
-                            trendingModel.isLoading = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                trendingModel.isLoading = false
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(pages) { page in
+                            switch page.id {
+                            case 0:
+                                PostsList(isLoading: $homeModel.isLoading, items: homeModel.posts)
+                                    .onAppear {
+                                        homeModel.isLoading = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                            homeModel.isLoading = false
+                                        }
+                                    }
+                            case 1:
+                                PostsList(isLoading: $trendingModel.isLoading, items: trendingModel.posts, withDescription: false)
+                                    .onAppear {
+                                        trendingModel.isLoading = true
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                            trendingModel.isLoading = false
+                                        }
+                                    }
+                            default:
+                                PostDetail(post: accountModel.post)
                             }
                         }
-                    if toggle {
-                        PostDetail(post: accountModel.post)
-                            .pagerTabItem(tag: 2) {
-                                YoutubeNavBarItem(title: "Account", imageName: "person.fill", selection: $selection, tag: 2)
-                            }
                     }
                 }
             }
             .pagerTabStripViewStyle(.barButton(tabItemHeight: 80, padding: EdgeInsets(), indicatorViewHeight: 5, barBackgroundView: {
                 Color(red: 221/255.0, green: 0/255.0, blue: 19/255.0, opacity: 1.0)
-            },
-            indicatorView: {
+            }, indicatorView: {
                 Rectangle().fill(selectedColor)
             }))
             .pagerContext(Int.self)

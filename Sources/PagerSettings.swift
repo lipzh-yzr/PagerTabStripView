@@ -14,15 +14,13 @@ struct DataItem<SelectedType>: Identifiable, Equatable where SelectedType: Hasha
         return lhs.tag == rhs.tag
     }
     private(set) var tag: SelectedType
-    fileprivate(set) var view: AnyView
     fileprivate(set) var index: Int
 
     var id: SelectedType { tag }
 
-    fileprivate init(tag: SelectedType, index: Int, view: AnyView) {
+    fileprivate init(tag: SelectedType, index: Int) {
         self.tag = tag
         self.index = index
-        self.view = view
     }
 }
 
@@ -131,6 +129,7 @@ public final class PagerSettings<SelectionType> where SelectionType: Hashable {
     private(set) var items = [SelectionType: DataItem<SelectionType>]() {
         didSet {
             itemsOrderedByIndex = items.values.sorted { $0.index < $1.index }.map { $0.tag }
+            recalculateTransition()
         }
     }
     private(set) var itemsOrderedByIndex = [SelectionType]()
@@ -196,18 +195,13 @@ public final class PagerSettings<SelectionType> where SelectionType: Hashable {
         transition = TransitionProgress(from: itemsOrderedByIndex[safe: lowIndex], to: itemsOrderedByIndex[safe: lowIndex+1], percentage: percentage)
     }
 
-    func createOrUpdate<TabView: View>(tag: SelectionType, index: Int, view: TabView) {
-        if var dataItem = items[tag] {
-            dataItem.index = index
-            dataItem.view = AnyView(view)
-            items[tag] = dataItem
-        } else {
-            items[tag] = DataItem(tag: tag, index: index, view: AnyView(view))
+    func updateItems(_ tags: [SelectionType]) {
+        var updatedItems = [SelectionType: DataItem<SelectionType>]()
+        for (index, tag) in tags.enumerated() {
+            updatedItems[tag] = DataItem(tag: tag, index: index)
         }
-    }
 
-    func remove(tag: SelectionType) {
-        items.removeValue(forKey: tag)
+        items = updatedItems
     }
 
     func nextSelection(for selection: SelectionType) -> SelectionType {

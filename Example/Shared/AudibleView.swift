@@ -32,15 +32,22 @@ struct AudibleView: View {
                          PageItem(tag: 6, title: "Mini", posts: TweetsModel().posts)
     ]
 
+    private var visibleItems: [PageItem] {
+        toggle ? items : Array(items.reversed().dropLast(5))
+    }
+
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    ForEach(toggle ? items : items.reversed().dropLast(5), id: \.tag) { item in
-                        PostsList(items: item.posts, withDescription: item.withDescription)
-                            .pagerTabItem(tag: item.tag) {
-                                TabBarView(tag: item.tag, title: item.title, selection: $selection)
-                            }
+            VStack(spacing: 0) {
+                NavBarWrapperView(visibleItems, id: \.tag, selection: $selection) { item in
+                    TabBarView(tag: item.tag, title: item.title, selection: $selection)
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(visibleItems, id: \.tag) { item in
+                            PostsList(items: item.posts, withDescription: item.withDescription)
+                        }
                     }
                 }
             }

@@ -18,52 +18,70 @@ struct SegmentedView: View {
     @StateObject var mediaModel = TweetsModel()
     @StateObject var likesModel = TweetsModel()
 
+    private var pages: [Int] {
+        toggle ? [0, 1, 2] : [0, 2]
+    }
+
+    private let embeddedPages = [0, 1, 2]
+
     @MainActor var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
-                        .pagerTabItem(tag: 0) {
-                            Text("Tweets")
-                        }
-                    if toggle {
-                        PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left, .right]), selection: $selection2) {
-                            WithPerceptionTracking {
+            VStack(spacing: 0) {
+                NavBarWrapperView(pages, id: \.self, selection: $selection) { page in
+                    Text(title(for: page))
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(pages, id: \.self) { page in
+                            switch page {
+                            case 0:
                                 PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
-                                    .pagerTabItem(tag: 0) {
-                                        Text("Tweets")
-                                    }
-                                PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
-                                    .pagerTabItem(tag: 1) {
-                                        Text("Media")
-                                    }
+                            case 1:
+                                embeddedPager
+                            default:
                                 PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
-                                    .pagerTabItem(tag: 2) {
-                                        Text("Likes")
-                                    }
                             }
                         }
-                        .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
-                                                                  backgroundColor: .blue,
-                                                                  padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
-                        .pagerContext(Int.self)
-                        .pagerTabItem(tag: 1) {
-                            Text("Embedded")
-                        }
                     }
-                    PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
-                        .pagerTabItem(tag: 2) {
-                            Text("Likes")
-                        }
                 }
             }
-            .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
-                                                      backgroundColor: .yellow,
+            .pagerTabStripViewStyle(.segmentedControl(backgroundColor: .yellow,
                                                       padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
             .pagerContext(Int.self)
             .navigationBarItems(trailing: Button("Refresh") {
                 toggle.toggle()
             })
+        }
+    }
+
+    @MainActor private var embeddedPager: some View {
+        VStack(spacing: 0) {
+            NavBarWrapperView(embeddedPages, id: \.self, selection: $selection2) { page in
+                Text(title(for: page))
+            }
+
+            PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left, .right]), selection: $selection2) {
+                WithPerceptionTracking {
+                    PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
+                    PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
+                    PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
+                }
+            }
+        }
+        .pagerTabStripViewStyle(.segmentedControl(backgroundColor: .blue,
+                                                  padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
+        .pagerContext(Int.self)
+    }
+
+    private func title(for page: Int) -> String {
+        switch page {
+        case 0:
+            return "Tweets"
+        case 1:
+            return "Embedded"
+        default:
+            return "Likes"
         }
     }
 }

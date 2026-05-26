@@ -20,15 +20,18 @@ struct SimpleView: View {
 
     var body: some View {
         WithPerceptionTracking {
-            PagerTabStripView(selection: $selection) {
-                WithPerceptionTracking {
-                    ForEach(colors, id: \.self) { color in
-                        Rectangle()
-                            .fill(color.gradient)
-                            .pagerTabItem(tag: color) {
-                                Text(textForColor[color]!)
-                                    .foregroundColor(color)
-                            }
+            VStack(spacing: 0) {
+                NavBarWrapperView(colors, id: \.self, selection: $selection) { color in
+                    Text(textForColor[color]!)
+                        .foregroundColor(color)
+                }
+
+                PagerTabStripView(selection: $selection) {
+                    WithPerceptionTracking {
+                        ForEach(colors, id: \.self) { color in
+                            Rectangle()
+                                .fill(color.gradient)
+                        }
                     }
                 }
             }

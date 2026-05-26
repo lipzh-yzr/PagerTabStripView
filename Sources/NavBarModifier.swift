@@ -8,72 +8,80 @@
 import Perception
 import SwiftUI
 
-struct NavBarModifier<SelectionType>: ViewModifier where SelectionType: Hashable {
-    @Binding private var selection: SelectionType
+public struct NavBarWrapperView<Data, ID, Content>: View where Data: RandomAccessCollection, ID: Hashable, Content: View {
+    private let data: Data
+    private let id: KeyPath<Data.Element, ID>
+    @Binding private var selection: ID
+    private let content: (Data.Element) -> Content
 
-    public init(selection: Binding<SelectionType>) {
+    public init(_ data: Data,
+                id: KeyPath<Data.Element, ID>,
+                selection: Binding<ID>,
+                @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.data = data
+        self.id = id
         self._selection = selection
-    }
-
-    @ViewBuilder
-    @MainActor func body(content: Content) -> some View {
-        if style.managedBySelf {
-            content
-        } else {
-            VStack(alignment: .leading, spacing: 0) {
-                if !style.placedInToolbar {
-                    NavBarWrapperView(selection: $selection)
-                    content
-                } else {
-                    content.toolbar(content: {
-                        ToolbarItem(placement: .principal) {
-                            NavBarWrapperView(selection: $selection)
-                        }
-                    })
-                }
-            }
-        }
-    }
-
-    @Environment(\.pagerStyle) var style: PagerStyle
-}
-
-public struct NavBarWrapperView<SelectionType>: View where SelectionType: Hashable {
-    @Binding var selection: SelectionType
-
-    public init(selection: Binding<SelectionType>) {
-        self._selection = selection
+        self.content = content
     }
 
     @ViewBuilder
     @MainActor public var body: some View {
         WithPerceptionTracking {
-            navBar(pagerSettings: pagerSettings)
+            navBar(pagerSettings: pagerSettings, items: navBarItems)
+                .onAppear {
+                    updatePagerItems()
+                }
+                .onChange(of: itemIDs) { _ in
+                    updatePagerItems()
+                }
         }
     }
 
     @ViewBuilder
-    @MainActor private func navBar(pagerSettings: PagerSettings<SelectionType>) -> some View {
+    @MainActor private func navBar(pagerSettings: PagerSettings<ID>, items: [NavBarContentItem<ID>]) -> some View {
         WithPerceptionTracking {
             switch style {
             case let barStyle as BarStyle:
-                IndicatorBarView<SelectionType, AnyView>(selection: $selection,
-                                                         pagerSettings: pagerSettings,
-                                                         indicator: barStyle.indicatorView)
+                IndicatorBarView<ID, AnyView>(selection: $selection,
+                                              pagerSettings: pagerSettings,
+                                              indicator: barStyle.indicatorView)
             case is SegmentedControlStyle:
-                SegmentedNavBarView(selection: $selection, pagerSettings: pagerSettings)
+                SegmentedNavBarView(selection: $selection, pagerSettings: pagerSettings, items: items)
             case let indicatorStyle as BarButtonStyle:
                 if indicatorStyle.scrollable {
-                    ScrollableNavBarView(selection: $selection, pagerSettings: pagerSettings)
+                    ScrollableNavBarView(selection: $selection, pagerSettings: pagerSettings, items: items)
                 } else {
-                    FixedSizeNavBarView(selection: $selection, pagerSettings: pagerSettings)
+                    FixedSizeNavBarView(selection: $selection, pagerSettings: pagerSettings, items: items)
                 }
             default:
-                SegmentedNavBarView(selection: $selection, pagerSettings: pagerSettings)
+                SegmentedNavBarView(selection: $selection, pagerSettings: pagerSettings, items: items)
             }
         }
     }
 
     @Environment(\.pagerStyle) var style: PagerStyle
-    @Environment(PagerSettings<SelectionType>.self) private var pagerSettings: PagerSettings<SelectionType>
+    @Environment(PagerSettings<ID>.self) private var pagerSettings: PagerSettings<ID>
+
+    private var itemIDs: [ID] {
+        data.map { $0[keyPath: id] }
+    }
+
+    private var navBarItems: [NavBarContentItem<ID>] {
+        data.map { element in
+            NavBarContentItem(id: element[keyPath: id], view: AnyView(content(element)))
+        }
+    }
+
+    @MainActor private func updatePagerItems() {
+        pagerSettings.updateItems(itemIDs)
+    }
+}
+
+extension NavBarWrapperView where Data.Element: Identifiable, Data.Element.ID == ID {
+
+    public init(_ data: Data,
+                selection: Binding<ID>,
+                @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.init(data, id: \.id, selection: selection, content: content)
+    }
 }
