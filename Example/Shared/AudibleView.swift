@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 private struct PageItem: Identifiable {
     var id: Int { tag }
@@ -32,22 +33,27 @@ struct AudibleView: View {
     ]
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            ForEach(toggle ? items : items.reversed().dropLast(5), id: \.tag) { item in
-                PostsList(items: item.posts, withDescription: item.withDescription)
-                    .pagerTabItem(tag: item.tag) {
-                        TabBarView(tag: item.tag, title: item.title, selection: $selection)
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    ForEach(toggle ? items : items.reversed().dropLast(5), id: \.tag) { item in
+                        PostsList(items: item.posts, withDescription: item.withDescription)
+                            .pagerTabItem(tag: item.tag) {
+                                TabBarView(tag: item.tag, title: item.title, selection: $selection)
+                            }
                     }
+                }
             }
+            .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,
+                                                         tabItemHeight: 60,
+                                                         padding: EdgeInsets(),
+                                                         barBackgroundView: { colorScheme == .dark ? Color.black : .white},
+                                                         indicatorView: { Rectangle().frame(height: 0) }))
+            .pagerContext(Int.self)
+            .navigationBarItems(trailing: Button("Refresh") {
+                toggle.toggle()
+            })
         }
-        .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,
-                                                     tabItemHeight: 60,
-                                                     padding: EdgeInsets(),
-                                                     barBackgroundView: { colorScheme == .dark ? Color.black : .white},
-                                                     indicatorView: { Rectangle().frame(height: 0) }))
-        .navigationBarItems(trailing: Button("Refresh") {
-            toggle.toggle()
-        })
     }
 }
 
@@ -66,15 +72,17 @@ private struct TabBarView<SelectionType: Hashable>: View {
     }
 
     @MainActor var body: some View {
-        ZStack {
-            Text(title)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
-                .animation(.easeInOut, value: pagerSettings.transition)
-                .font(.system(size: Double.interpolate(a: 30, b: 15, progress: pagerSettings.transition.progress(for: tag))))
-                .frame(maxHeight: .infinity)
-                .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+        WithPerceptionTracking {
+            ZStack {
+                Text(title)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .animation(.easeInOut, value: pagerSettings.transition)
+                    .font(.system(size: Double.interpolate(a: 30, b: 15, progress: pagerSettings.transition.progress(for: tag))))
+                    .frame(maxHeight: .infinity)
+                    .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+            }
+            .frame(height: 40)
         }
-        .frame(height: 40)
     }
 }
 

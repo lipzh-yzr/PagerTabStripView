@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct YoutubeView: View {
 
@@ -19,43 +20,48 @@ struct YoutubeView: View {
     @State var toggle: Bool = false
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            PostsList(isLoading: $homeModel.isLoading, items: homeModel.posts)
-                .pagerTabItem(tag: 0) {
-                    YoutubeNavBarItem(title: "Home", imageName: "house", selection: $selection, tag: 0)
-                }.onAppear {
-                    homeModel.isLoading = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        homeModel.isLoading = false
-                    }
-                }
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    PostsList(isLoading: $homeModel.isLoading, items: homeModel.posts)
+                        .pagerTabItem(tag: 0) {
+                            YoutubeNavBarItem(title: "Home", imageName: "house", selection: $selection, tag: 0)
+                        }.onAppear {
+                            homeModel.isLoading = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                homeModel.isLoading = false
+                            }
+                        }
 
-            PostsList(isLoading: $trendingModel.isLoading, items: trendingModel.posts, withDescription: false)
-                .pagerTabItem(tag: 1) {
-                    YoutubeNavBarItem(title: "Trending", imageName: "flame", selection: $selection, tag: 1)
-                }
-                .onAppear {
-                    trendingModel.isLoading = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        trendingModel.isLoading = false
+                    PostsList(isLoading: $trendingModel.isLoading, items: trendingModel.posts, withDescription: false)
+                        .pagerTabItem(tag: 1) {
+                            YoutubeNavBarItem(title: "Trending", imageName: "flame", selection: $selection, tag: 1)
+                        }
+                        .onAppear {
+                            trendingModel.isLoading = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                trendingModel.isLoading = false
+                            }
+                        }
+                    if toggle {
+                        PostDetail(post: accountModel.post)
+                            .pagerTabItem(tag: 2) {
+                                YoutubeNavBarItem(title: "Account", imageName: "person.fill", selection: $selection, tag: 2)
+                            }
                     }
                 }
-            if toggle {
-                PostDetail(post: accountModel.post)
-                    .pagerTabItem(tag: 2) {
-                        YoutubeNavBarItem(title: "Account", imageName: "person.fill", selection: $selection, tag: 2)
-                    }
             }
+            .pagerTabStripViewStyle(.barButton(tabItemHeight: 80, padding: EdgeInsets(), indicatorViewHeight: 5, barBackgroundView: {
+                Color(red: 221/255.0, green: 0/255.0, blue: 19/255.0, opacity: 1.0)
+            },
+            indicatorView: {
+                Rectangle().fill(selectedColor)
+            }))
+            .pagerContext(Int.self)
+            .navigationBarItems(trailing: Button(toggle ? "Hide Pofile" : "Show Profile") {
+                toggle.toggle()
+            })
         }
-        .pagerTabStripViewStyle(.barButton(tabItemHeight: 80, padding: EdgeInsets(), indicatorViewHeight: 5, barBackgroundView: {
-            Color(red: 221/255.0, green: 0/255.0, blue: 19/255.0, opacity: 1.0)
-        },
-        indicatorView: {
-            Rectangle().fill(selectedColor)
-        }))
-        .navigationBarItems(trailing: Button(toggle ? "Hide Pofile" : "Show Profile") {
-            toggle.toggle()
-        })
     }
 }
 
@@ -80,20 +86,22 @@ private struct YoutubeNavBarItem<SelectionType>: View where SelectionType: Hasha
     }
 
     @MainActor var body: some View {
-        VStack {
-            image
-                .renderingMode(.template)
-                .resizable()
-                .frame(width: 25, height: 25)
-                .foregroundColor(unselectedColor.interpolateTo(color: selectedColor,
-                                                               fraction: pagerSettings.transition.progress(for: tag)))
-            Text(title.uppercased())
-                .foregroundColor(unselectedColor.interpolateTo(color: selectedColor,
-                                                               fraction: pagerSettings.transition.progress(for: tag)))
-                .fontWeight(.semibold)
+        WithPerceptionTracking {
+            VStack {
+                image
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 25, height: 25)
+                    .foregroundColor(unselectedColor.interpolateTo(color: selectedColor,
+                                                                   fraction: pagerSettings.transition.progress(for: tag)))
+                Text(title.uppercased())
+                    .foregroundColor(unselectedColor.interpolateTo(color: selectedColor,
+                                                                   fraction: pagerSettings.transition.progress(for: tag)))
+                    .fontWeight(.semibold)
+            }
+            .animation(.default, value: selection)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .animation(.default, value: selection)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

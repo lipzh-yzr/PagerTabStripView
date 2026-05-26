@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct CustomStyleView: View {
 
@@ -22,38 +23,41 @@ struct CustomStyleView: View {
     ]
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-
-            ForEach(🌈, id: \.self) { color in
-                ZStack(alignment: .center) {
-                    color
-                    Text("Any custom View You like")
-                }
-                .pagerTabItem(tag: color) {
-                    Capsule()
-                        .frame(height: 32)
-                        .padding(4)
-                        .foregroundColor(color)
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    ForEach(🌈, id: \.self) { color in
+                        ZStack(alignment: .center) {
+                            color
+                            Text("Any custom View You like")
+                        }
+                        .pagerTabItem(tag: color) {
+                            Capsule()
+                                .frame(height: 32)
+                                .padding(4)
+                                .foregroundColor(color)
+                        }
+                    }
                 }
             }
+            .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
+                                               pagerAnimationOnTap: .interactiveSpring(response: 0.5,
+                                                                                       dampingFraction: 1.00,
+                                                                                       blendDuration: 0.25),
+                                               tabItemHeight: 48,
+                                               barBackgroundView: {
+                                                LinearGradient(
+                                                    colors: 🌈,
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                                .opacity(0.2)
+                                               }, indicatorView: {
+                                                Text([.orange, .green, .purple].contains(selection) ? "👍🏻" : "👎").offset(x: 0, y: -24)
+                                               }))
+            .pagerContext(Color.self)
+            .navigationTitle("🌈 Rainbow")
         }
-        .pagerTabStripViewStyle(.barButton(placedInToolbar: false,
-                                           pagerAnimationOnTap: .interactiveSpring(response: 0.5,
-                                                                                   dampingFraction: 1.00,
-                                                                                   blendDuration: 0.25),
-                                           tabItemHeight: 48,
-                                           barBackgroundView: {
-                                            LinearGradient(
-                                                colors: 🌈,
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                            .opacity(0.2)
-                                           }, indicatorView: {
-                                            Text([.orange, .green, .purple].contains(selection) ? "👍🏻" : "👎").offset(x: 0, y: -24)
-                                           }))
-        .pagerContext(Color.self)
-        .navigationTitle("🌈 Rainbow")
     }
 }
 

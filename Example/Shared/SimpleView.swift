@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct SimpleView: View {
 
@@ -18,28 +19,33 @@ struct SimpleView: View {
     @State var selection: Color = .green
 
     var body: some View {
-        PagerTabStripView(selection: $selection) {
-            ForEach(colors, id: \.self) { color in
-                Rectangle()
-                    .fill(color.gradient)
-                    .pagerTabItem(tag: color) {
-                        Text(textForColor[color]!)
-                            .foregroundColor(color)
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    ForEach(colors, id: \.self) { color in
+                        Rectangle()
+                            .fill(color.gradient)
+                            .pagerTabItem(tag: color) {
+                                Text(textForColor[color]!)
+                                    .foregroundColor(color)
+                            }
                     }
+                }
             }
+            .pagerTabStripViewStyle(
+                .scrollableBarButton(tabItemSpacing: 25,
+                                     tabItemHeight: 50,
+                                     indicatorViewHeight: 13,
+                                     indicatorView: {
+                                        Circle()
+                                            .offset(y: -5)
+                                            .foregroundColor(selection)
+                                            .animation(.linear(duration: 0.5)
+                                                        .repeatForever(autoreverses: true),
+                                                       value: selection)
+                                     }))
+            .pagerContext(Color.self)
         }
-        .pagerTabStripViewStyle(
-            .scrollableBarButton(tabItemSpacing: 25,
-                                 tabItemHeight: 50,
-                                 indicatorViewHeight: 13,
-                                 indicatorView: {
-                                    Circle()
-                                        .offset(y: -5)
-                                        .foregroundColor(selection)
-                                        .animation(.linear(duration: 0.5)
-                                                    .repeatForever(autoreverses: true),
-                                                   value: selection)
-                                 }))
     }
 
 }

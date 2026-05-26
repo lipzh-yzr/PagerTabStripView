@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 private struct PageItem: Identifiable {
     var id: Int { tag }
@@ -32,33 +33,38 @@ struct PinterestView: View {
     ]
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            ForEach(toggle ? items : items.reversed().dropLast(5), id: \.title) { item in
-                PostsList(items: item.posts, withDescription: item.withDescription)
-                    .pagerTabItem(tag: item.tag) {
-                        ZStack {
-                            Text(item.title)
-                                .foregroundColor(selection == item.tag ? .black : .white)
-                                .font(.subheadline)
-                                .frame(maxHeight: .infinity)
-                                .animation(.default, value: selection)
-                                .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
+                    ForEach(toggle ? items : items.reversed().dropLast(5), id: \.title) { item in
+                        PostsList(items: item.posts, withDescription: item.withDescription)
+                            .pagerTabItem(tag: item.tag) {
+                                ZStack {
+                                    Text(item.title)
+                                        .foregroundColor(selection == item.tag ? .black : .white)
+                                        .font(.subheadline)
+                                        .frame(maxHeight: .infinity)
+                                        .animation(.default, value: selection)
+                                        .padding(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 
+                                }
+                                .frame(height: 40)
+                            }
                         }
-                        .frame(height: 40)
-                    }
+                }
             }
+            .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,
+                                                         tabItemHeight: 60,
+                                                         padding: EdgeInsets(),
+                                                         barBackgroundView: { Color(.systemBackground) },
+                                                         indicatorView: {
+                                                            Rectangle().fill(.white).frame(height: 50).cornerRadius(25).offset(y: -30).zIndex(-1)
+                                                         }))
+            .pagerContext(Int.self)
+            .navigationBarItems(trailing: Button("Refresh") {
+                toggle.toggle()
+            })
         }
-        .pagerTabStripViewStyle(.scrollableBarButton(tabItemSpacing: 15,
-                                                     tabItemHeight: 60,
-                                                     padding: EdgeInsets(),
-                                                     barBackgroundView: { Color(.systemBackground) },
-                                                     indicatorView: {
-                                                        Rectangle().fill(.white).frame(height: 50).cornerRadius(25).offset(y: -30).zIndex(-1)
-                                                     }))
-        .navigationBarItems(trailing: Button("Refresh") {
-            toggle.toggle()
-        })
     }
 
     private func HoleShapeMask(in rect: CGRect) -> Path {

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PagerTabStripView
+import Perception
 
 struct SegmentedView: View {
     @State var toggle = true
@@ -18,44 +19,52 @@ struct SegmentedView: View {
     @StateObject var likesModel = TweetsModel()
 
     @MainActor var body: some View {
-        PagerTabStripView(selection: $selection) {
-            PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
-                .pagerTabItem(tag: 0) {
-                    Text("Tweets")
-                }
-            if toggle {
-                PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left, .right]), selection: $selection2) {
+        WithPerceptionTracking {
+            PagerTabStripView(selection: $selection) {
+                WithPerceptionTracking {
                     PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
                         .pagerTabItem(tag: 0) {
                             Text("Tweets")
                         }
-                    PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
-                        .pagerTabItem(tag: 1) {
-                            Text("Media")
+                    if toggle {
+                        PagerTabStripView(edgeSwipeGestureDisabled: .constant([.left, .right]), selection: $selection2) {
+                            WithPerceptionTracking {
+                                PostsList(isLoading: $tweetsModel.isLoading, items: tweetsModel.posts)
+                                    .pagerTabItem(tag: 0) {
+                                        Text("Tweets")
+                                    }
+                                PostsList(isLoading: $mediaModel.isLoading, items: mediaModel.posts)
+                                    .pagerTabItem(tag: 1) {
+                                        Text("Media")
+                                    }
+                                PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
+                                    .pagerTabItem(tag: 2) {
+                                        Text("Likes")
+                                    }
+                            }
                         }
+                        .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
+                                                                  backgroundColor: .blue,
+                                                                  padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
+                        .pagerContext(Int.self)
+                        .pagerTabItem(tag: 1) {
+                            Text("Embedded")
+                        }
+                    }
                     PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
                         .pagerTabItem(tag: 2) {
                             Text("Likes")
                         }
                 }
-                .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
-                                                          backgroundColor: .blue,
-                                                          padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
-                .pagerTabItem(tag: 1) {
-                    Text("Embedded")
-                }
             }
-            PostsList(isLoading: $likesModel.isLoading, items: likesModel.posts, withDescription: false)
-                .pagerTabItem(tag: 2) {
-                    Text("Likes")
-                }
+            .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
+                                                      backgroundColor: .yellow,
+                                                      padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
+            .pagerContext(Int.self)
+            .navigationBarItems(trailing: Button("Refresh") {
+                toggle.toggle()
+            })
         }
-        .pagerTabStripViewStyle(.segmentedControl(placedInToolbar: false,
-                                                  backgroundColor: .yellow,
-                                                  padding: EdgeInsets(top: 0, leading: 20, bottom: 10, trailing: 20)))
-        .navigationBarItems(trailing: Button("Refresh") {
-            toggle.toggle()
-        })
     }
 }
 
