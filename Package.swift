@@ -9,7 +9,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/SwiftUIX/SwiftUIX.git", from: "0.3.0"),
-        .package(url: "https://github.com/pointfreeco/swift-perception", from: "1.6.0")
+        .package(
+            url: "https://github.com/pointfreeco/swift-perception",
+            exact: "2.0.10"
+        )
     ],
     targets: [
         .target(
